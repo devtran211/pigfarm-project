@@ -15,7 +15,7 @@ const MeditionWareHouseSchema = new mongoose.Schema({
     import_price: Number,
     date_of_manufacture: Date,
     expiry: Date,
-    Note: String,
+    note: String,
     invoice: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'invoices' 
