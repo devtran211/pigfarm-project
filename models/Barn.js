@@ -7,6 +7,7 @@ const BarnSchema = new mongoose.Schema({
     },
     acreage: String,
     maximum_capacity: Number,
+    total_pigs: Number,
     status: String,
     start_date: Date,
     note: String,

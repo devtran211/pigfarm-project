@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const MeditionWareHouseModel = require('../models/MeditionWareHouse');
-const { findById } = require('../models/User');
 
 router.get('/', async (req,res) => {
     var medition = await MeditionWareHouseModel.find({}).populate('invoice');
@@ -10,6 +9,7 @@ router.get('/', async (req,res) => {
 
 router.post('/add', async (req,res) => {
     var medition = await MeditionWareHouseModel.create(req.body);
+    console.log(req.body.usage_type);
     res.json(medition);
 })
 

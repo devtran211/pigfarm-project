@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var BarnModel = require('../models/Barn');
 var BreedingAreaModel = require('../models/BreedingArea');
-var OffSpringModel = require('../models/OffSpring');
+var HerdModel = require('../models/Herd');
 
 router.get('/', async (req, res) => {
    var barns = await BarnModel.find({}).populate('breedingarea');
@@ -45,7 +45,7 @@ router.delete('/delete/:id', async (req, res) => {
    };
 })
 
-// Thêm con giống lợn vào chuồng
+// Thêm đàn lợn vào chuồng
 
 // Lấy danh sách con giống trong một chuồng
 

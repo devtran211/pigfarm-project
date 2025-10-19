@@ -11,9 +11,14 @@ const app = express();
 const authRoutes = require('./routers/auth');
 const breedingareaRoute = require('./routers/breedingarea');
 const barnRoute = require('./routers/barn');
-const offspringRoute = require('./routers/offspring');
+const herdRoute = require('./routers/herd');
 const foodWareHouseRoute = require('./routers/foodwarehouse');
 const meditionWareHouseRoute = require('./routers/meditionwarehouse');
+const foodrationRoute = require('./routers/foodration')
+const feedinglogRoute = require('./routers/feedinglog');
+const drugUseLogRoute = require('./routers/druguselog');
+const druguseRoute = require('./routers/druguse');
+const reproductiveRoute = require('./routers/reproductive');
 const invoiceRoute = require('./routers/invoice');
 const supplierRoute = require('./routers/supplier');
 
@@ -35,9 +40,14 @@ app.use(cors({
 app.use('/api/auth', authRoutes);
 app.use('/api/breedingarea', breedingareaRoute);
 app.use('/api/barn', barnRoute);
-app.use('/api/offspring', offspringRoute);
+app.use('/api/herd', herdRoute);
 app.use('/api/food-warehouse', foodWareHouseRoute);
 app.use('/api/medition-warehouse', meditionWareHouseRoute);
+app.use('/api/food-ration', foodrationRoute);
+app.use('/api/feeding-log', feedinglogRoute);
+app.use('/api/drug-use-log', drugUseLogRoute);
+app.use('/api/drug-use', druguseRoute);
+app.use('/api/reproductive', reproductiveRoute);
 app.use('/api/invoice', invoiceRoute);
 app.use('/api/supplier', supplierRoute);
 

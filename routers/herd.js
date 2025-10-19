@@ -1,29 +1,29 @@
 var express = require('express');
 var router = express.Router();
-const OffSpringModel = require('../models/OffSpring');
+const HerdModel = require('../models/Herd');
 const InvoiceModel = require('../models/Invoice');
 
 router.get('/', async (req, res) => {
-   var invoices = await OffSpringModel.find({}).populate('invoice');
-   res.json(invoices);
+   var herds = await HerdModel.find({}).populate('invoice');
+   res.json(herds);
 })
 
 router.post('/add', async (req, res) => {
-   var offspring = await OffSpringModel.create(req.body);
-   res.json(offspring);
+   var herds = await HerdModel.create(req.body);
+   res.json(herds);
 })
 
 router.get('/edit/:id', async (req, res) => {
    var id = req.params.id;
-   var offspring = await OffSpringModel.findById(id);
-   res.json(offspring);
+   var herds = await HerdModel.findById(id);
+   res.json(herds);
 })
 
 router.put('/edit/:id', async (req, res) => {
    var id = req.params.id;
-   var offspring = req.body;
+   var herds = req.body;
    try {
-      await OffSpringModel.findByIdAndUpdate(id, offspring);
+      await HerdModel.findByIdAndUpdate(id, herds);
       res.json('update succeed !');
    } catch (err) {
       res.json('update failed. Error: ' + err);
@@ -33,10 +33,10 @@ router.put('/edit/:id', async (req, res) => {
 router.delete('/delete/:id', async (req, res) => {
    var id = req.params.id;
    try {
-      await OffSpringModel.findByIdAndDelete(id);
-      res.json('Delete breeding succeed !');
+      await HerdModel.findByIdAndDelete(id);
+      res.json('Delete herd succeed !');
    } catch (err) {
-      res.json('Delete breedingarea fail. Error: ' + err);
+      res.json('Delete herd fail. Error: ' + err);
    };
 })
 

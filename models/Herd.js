@@ -1,20 +1,22 @@
 var mongoose = require('mongoose');
 
-var OffSpringSchema = mongoose.Schema({
+var HerdSchema = mongoose.Schema({
    name: String,
    origin: String,
    date_of_entry: Date,
+   birth_date: Date,
    type: String,
    sex: String,
    weight_at_import: Number,
    health: String,
    vaccination: Boolean,
    inventory: Number,
+   import_price: Number,
    invoice: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'invoices' 
    }
 });
 
-var OffSpringModel = mongoose.model('offsprings', OffSpringSchema); 
-module.exports = OffSpringModel;
+var HerdModel = mongoose.model('herds', HerdSchema); 
+module.exports = HerdModel;

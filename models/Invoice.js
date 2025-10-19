@@ -7,6 +7,7 @@ var InvoiceSchema = mongoose.Schema({
       price: Number,
       quantity: Number,
       unit: String,
+      capacity: String
    }],
    discount: Number,
    total: Number,
@@ -15,6 +16,18 @@ var InvoiceSchema = mongoose.Schema({
    supplier: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'suppliers'
+   },
+   breeding: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'breedings'
+   },
+   food_warehouse: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'food_warehouses'
+   },
+   medition_warehouse: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'medition_warehouses'
    }
 });
 

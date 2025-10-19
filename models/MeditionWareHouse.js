@@ -6,10 +6,11 @@ const MeditionWareHouseSchema = new mongoose.Schema({
     drug_type: String,
     usage_type: {
       type: String,
-      enum: ['Trộn thức ăn', 'pha nước', 'tiêm'], 
+      enum: ['Trộn thức ăn', 'Pha nước', 'Tiêm', 'Uống trực tiếp'], 
       required: true
    },
     inventory: Number,
+    original_inventory: Number,
     unit: String,
     capacity: String,
     import_price: Number,
@@ -22,5 +23,5 @@ const MeditionWareHouseSchema = new mongoose.Schema({
    }
 });
 
-var MeditionWareHouseModel = mongoose.model('medition_warehouses', MeditionWareHouseSchema);
+const MeditionWareHouseModel = mongoose.models.medition_warehouses || mongoose.model('medition_warehouses', MeditionWareHouseSchema);
 module.exports = MeditionWareHouseModel;

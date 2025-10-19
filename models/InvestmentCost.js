@@ -1,17 +1,16 @@
 const mongoose = require('mongoose');
 
 const InvestmentCostSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        require: true
-    },
-    acreage: String,
-    number_of_barns: Number,
-    type: String,
-    status: String,
-    start_date: Date,
-    note: String
+    breeding_cost: Number,
+    food_cost: Number,
+    medition_cost: Number,
+    fixed_cost: Number,
+    total: Number,
+    barn:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'barns' 
+    }
 });
 
-var BreedingAreaModel = mongoose.model('breedingareas', BreedingAreaSchema)
-module.exports = BreedingAreaModel;
+var InvestmentCostModel = mongoose.model('investment_costs', InvestmentCostSchema)
+module.exports = InvestmentCostModel;
