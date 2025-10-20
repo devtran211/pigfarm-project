@@ -17,10 +17,6 @@ const BreedingRecordSchema = mongoose.Schema({
     }],
     pregnant: { type: Boolean, default: false },
     expectedBirthDate: Date,
-    giveBirthRecord: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'give_birth_records' 
-    },
     note: String,
     isDeleted: { type: Boolean, default: false }
 }, { timestamps: true });

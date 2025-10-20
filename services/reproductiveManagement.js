@@ -2,6 +2,7 @@ const PigModel = require('../models/Pig');
 const GrowthTrackingModel = require('../models/ReproductiveManagement/GrowthTracking');
 const HealthHistoryModel = require('../models/HealthHistory');
 const BreedingPerformanceModel = require('../models/ReproductiveManagement/BreedingPerformance');
+const BreedingPerformanceLogModel = require('../models/ReproductiveManagement/BreedingPerformanceLog');
 const GiveBirthRecordModel = require('../models/ReproductiveManagement/GiveBirthRecord');
 
 async function suggestMatingForSow(sowId, options = {}) {
@@ -48,7 +49,7 @@ async function suggestMatingForSow(sowId, options = {}) {
     .populate('herd')
     .lean();
 
-    console.log('candidateBoars: ', candidateBoars);
+    //console.log('candidateBoars: ', candidateBoars);
 
     // 4. Scoring
     const scored = [];
@@ -67,13 +68,13 @@ async function suggestMatingForSow(sowId, options = {}) {
         const recentHealth = await HealthHistoryModel.findOne({ pig: boar._id, date: { $gte: ninetyDaysAgo } }).lean();
         if (!recentHealth) { score += 2; reasons.push('No recent health issues'); }
         else { reasons.push('Recent health record found'); }
-        console.log("recentHealth: ", recentHealth);
+        //console.log("recentHealth: ", recentHealth);
 
         const perfBoar = await BreedingPerformanceModel.findOne({ boar: boar._id, isDeleted: false }).lean();
         const perfPair = await BreedingPerformanceModel.findOne({ boar: boar._id, sow: sow._id, isDeleted: false }).lean();
 
-        console.log("perBoar", perfBoar);
-        console.log("perfPair", perfPair);
+        //console.log("perBoar", perfBoar);
+        //console.log("perfPair", perfPair);
 
         if (perfPair) {
             score += (perfPair.avgLitterSize || 0) * 0.5;
@@ -92,10 +93,8 @@ async function suggestMatingForSow(sowId, options = {}) {
 
         if (boar.meta && boar.meta.healthScore) {
             score += boar.meta.healthScore * 0.5; reasons.push('Health score present');
-            console.log("boar.meta: " + boar.meta.healthScore);
+            //console.log("boar.meta: " + boar.meta.healthScore);
         }
-
-        //
 
         // Evaluate growth stability in last 30 days
         const thirtyDaysAgo = new Date();
@@ -107,6 +106,11 @@ async function suggestMatingForSow(sowId, options = {}) {
             isDeleted: false
         }).sort({ date: 1 }).lean();
 
+        // console.log("Debug raw growthData:");
+        // growthData.forEach((g, idx) => {
+        //     console.log(idx, g.date, typeof g.date, new Date(g.date).getTime());
+        // });;
+
         if (growthData.length >= 2) {
             const firstEntry = growthData[0];
             const lastEntry = growthData[growthData.length - 1];
@@ -115,6 +119,7 @@ async function suggestMatingForSow(sowId, options = {}) {
             const firstWeight = firstEntry.weight || 0;
             const lastWeight = lastEntry.weight || 0;
             const weightGain = lastWeight - firstWeight;
+            console.log("weightGanin: " + "lastWeight: " + lastWeight + " - " + "firstWeight " + firstWeight + " = " + weightGain);
 
             if (weightGain > 5) { score += 3; reasons.push('Strong weight gain (last 30d)'); }
             else if (weightGain > 0) { score += 1; reasons.push('Mild weight gain'); }
@@ -124,6 +129,8 @@ async function suggestMatingForSow(sowId, options = {}) {
             const firstLength = firstEntry.length || 0;
             const lastLength = lastEntry.length || 0;
             const lengthGain = lastLength - firstLength;
+            console.log("lengthGanin: " + "lastLength: " + lastLength + " - " + "firstLength " + firstLength + " = " + lengthGain);
+            
 
             if (lengthGain > 3) { score += 2; reasons.push('Significant length growth'); }
             else if (lengthGain > 1) { score += 1; reasons.push('Moderate length growth'); }
@@ -140,7 +147,7 @@ async function suggestMatingForSow(sowId, options = {}) {
     return scored.slice(0, limit).map(item => ({
         boarId: item.boar._id,
         tag: item.boar.tag,
-        breed: item.boar.breed,
+        breed: item.boar.herd.type,
         score: Math.round(item.score * 100) / 100,
         reasons: item.reasons
     }));
@@ -190,42 +197,72 @@ async function updateBreedingPerformance({ sowId, boarId, birthCount = 0, weanCo
     });
 
     if (!record) {
-        record = new BreedingPerformance({
-        sow: sowId,
-        boar: boarId,
-        totalLitters: 0,
-        avgLitterSize: 0,
-        avgSurvivalRate: 0,
-        avgWeaningWeight: 0
+        record = new BreedingPerformanceModel({
+            sow: sowId,
+            boar: boarId,
+            totalLitters: 0,
+            avgLitterSize: 0,
+            avgSurvivalRate: 0,
+            avgWeaningWeight: 0
         });
     }
 
-    // ✅ Cập nhật tổng số lứa sinh
+    // Cập nhật tổng số lứa sinh
     record.totalLitters += birthCount > 0 ? 1 : 0;
 
-    // ✅ Cập nhật avgLitterSize = tổng số con sinh ra / tổng số lứa
+    // Cập nhật avgLitterSize = tổng số con sinh ra / tổng số lứa
     if (record.totalLitters > 0) {
         record.avgLitterSize =
         ((record.avgLitterSize * (record.totalLitters - 1)) + birthCount) / record.totalLitters;
     }
 
-    // ✅ Cập nhật avgSurvivalRate = tổng số con cai sữa / tổng số con sinh ra
+    // Cập nhật avgSurvivalRate = tổng số con cai sữa / tổng số con sinh ra
     if (birthCount > 0) {
         const survivalRate = birthCount > 0 ? (weanCount / birthCount) : 0;
         record.avgSurvivalRate =
         ((record.avgSurvivalRate * (record.totalLitters - 1)) + survivalRate) / record.totalLitters;
     }
 
-    // ✅ Cập nhật avgWeaningWeight = trung bình cân cai sữa (nếu có)
+    // Cập nhật avgWeaningWeight = trung bình cân cai sữa (nếu có)
     if (avgWeaningWeight > 0) {
         record.avgWeaningWeight =
         ((record.avgWeaningWeight * (record.totalLitters - 1)) + avgWeaningWeight) / record.totalLitters;
     }
 
-    // ✅ Ghi lại lần phối giống gần nhất
+    // Ghi lại lần phối giống gần nhất
     record.lastUsed = new Date();
 
     await record.save();
+
+    // LOGIC LOG BIRTH / WEANING
+    if (birthCount > 0) {
+        // 👉 Lần sinh → Tạo log mới
+        await BreedingPerformanceLogModel.create({
+            sow: sowId,
+            boar: boarId,
+            birthCount,
+            breedingPerformance: record,
+            weanCount: 0,
+            avgWeaningWeight: 0,
+            type: 'BIRTH'
+        });
+    } else {
+        // 👉 Lần cai sữa → Update log sinh gần nhất
+        const lastLog = await BreedingPerformanceLogModel.findOne({
+            sow: sowId,
+            boar: boarId,
+            type: 'BIRTH'
+        }).sort({ createdAt: -1 });
+
+        if (lastLog) {
+            lastLog.weanCount = weanCount;
+            lastLog.avgWeaningWeight = avgWeaningWeight;
+            lastLog.type = 'WEANING';
+            await lastLog.save();
+        } else {
+            console.warn(" Không tìm thấy log sinh con để update cai sữa!");
+        }
+    }
     return record;
 }
 

@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 const PigModel = require('../models/Pig');
+const HerdModel = require('../models/Herd');
 const BreedingRecordModel = require('../models/ReproductiveManagement/BreedingRecord');
 const GiveBirthRecordModel = require('../models/ReproductiveManagement/GiveBirthRecord');
 const { createWeaning, suggestMatingForSow, updateBreedingPerformance } = require('../services/reproductiveManagement');
@@ -16,8 +17,9 @@ router.get('/suggest/:sowId', async (req, res) => {
     }
 });
 
-// POST /breeding-record - create a breeding record
-router.post('/breeidng-record', async (req, res) => {
+/* ------------------------------------------------------------------------------------ */
+// Create a breeding record
+router.post('/breeding-record/add', async (req, res) => {
     try {
         const payload = req.body;
 
@@ -52,6 +54,152 @@ router.post('/breeidng-record', async (req, res) => {
     }
 });
 
+// Edit a record
+router.put('/breeding-record/:id', async (req, res) => {
+  try {
+    const recordId = req.params.id;
+    const payload = req.body;
+
+    console.log(payload);
+
+    // Lấy record cần update
+    let record = await BreedingRecordModel.findById(recordId);
+    if (!record) throw new Error('Breeding record not found');
+
+    // Update các field khác nếu có
+    if (payload.note !== undefined) record.note = payload.note;
+    if (payload.boar !== undefined) record.boar = payload.boar;
+    if (payload.sow !== undefined) record.sow = payload.sow;
+    if (payload.expectedBirthDate !== undefined) record.expectedBirthDate = payload.expectedBirthDate;
+
+    // Save lại
+    const updated = await record.save();
+
+    res.json({ success: true, data: updated });
+
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// Thêm attempt mới + auto xử lý pregnant / expectedBirthDate
+router.put('/breeding-record/attempt/:id', async (req, res) => {
+    try {
+        const recordId = req.params.id;
+        const { date, method, success } = req.body;
+
+        const record = await BreedingRecordModel.findById(recordId);
+        if (!record) throw new Error('Breeding record not found');
+
+        // Thêm attempt mới
+        record.attempts.push({ date, method, success });
+
+        if (success === true) {
+            record.pregnant = true;
+            const baseDate = new Date(date);
+            baseDate.setDate(baseDate.getDate() + 114);
+            record.expectedBirthDate = baseDate;
+        } else {
+            record.pregnant = false;
+            record.expectedBirthDate = null;
+        }
+
+        await record.save();
+        res.json({ success: true, data: record });
+
+    } catch (err) {
+        console.error(err);
+        res.status(400).json({ success: false, message: err.message });
+    }
+});
+
+// Update attempt cũ theo index ,ví dụ frontend sẽ gửi attemptIndex để biết sửa cái nào:
+router.put('/breeding-record/:id/attempt/:index', async (req, res) => {
+    try {
+        const recordId = req.params.id;
+        const index = parseInt(req.params.index);
+        const { date, method, success } = req.body;
+
+        console.log("REQ BODY:", req.body);  // 👈 THÊM DÒNG NÀY
+        console.log("METHOD:", method, "SUCCESS:", success);
+
+        const record = await BreedingRecordModel.findById(recordId);
+        if (!record) throw new Error('Breeding record not found');
+
+        if (!record.attempts[index]) throw new Error('Attempt index not found');
+
+        //Update dữ liệu
+        record.attempts[index].date = date || record.attempts[index].date;
+        record.attempts[index].method = method || record.attempts[index].method;
+        record.attempts[index].success = success;
+
+        // Kiểm tra logic pregnant lại theo *attempt cuối cùng thành công*
+        const lastSuccess = record.attempts.filter(a => a.success === true).pop();
+
+        if (lastSuccess) {
+            record.pregnant = true;
+            const baseDate = new Date(lastSuccess.date);
+            baseDate.setDate(baseDate.getDate() + 114);
+            record.expectedBirthDate = baseDate;
+        } else {
+            record.pregnant = false;
+            record.expectedBirthDate = null;
+        }
+
+        console.log("👉 Trước khi save:", JSON.stringify(record.attempts[index], null, 2));
+
+        await record.save();
+        res.json({ success: true, data: record });
+
+    } catch (err) {
+        console.error(err);
+        res.status(400).json({ success: false, message: err.message });
+    }
+});
+
+// Route DELETE — Xóa attempt trong BreedingRecord
+router.delete('/breeding-record/:recordId/attempt/:index', async (req, res) => {
+  try {
+    const { recordId, index } = req.params;
+    const attemptIndex = parseInt(index);  // vì index là string khi nhận từ URL
+
+    const record = await BreedingRecordModel.findById(recordId);
+    if (!record) throw new Error('Breeding record not found');
+
+    if (attemptIndex < 0 || attemptIndex >= record.attempts.length) {
+      throw new Error('Invalid attempt index');
+    }
+
+    // Lấy attempt trước khi xóa (để kiểm tra nếu cần)
+    const removedAttempt = record.attempts[attemptIndex];
+
+    // Xóa attempt theo index
+    record.attempts.splice(attemptIndex, 1);
+
+    // Nếu attempt bị xoá là attempt thành công duy nhất → reset pregnant & expectedBirthDate
+    const hasSuccessAttempt = record.attempts.some(at => at.success === true);
+    if (!hasSuccessAttempt) {
+      record.pregnant = false;
+      record.expectedBirthDate = null;
+    }
+
+    await record.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Attempt deleted by index', 
+      deleted: removedAttempt, 
+      data: record 
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+/* ------------------------------------------------------------------------------------- */
 router.post('/givebirth/:breedingRecordId', async (req, res) => {
     try {
         const breedingRecordId = req.params.breedingRecordId;
@@ -68,7 +216,25 @@ router.post('/givebirth/:breedingRecordId', async (req, res) => {
             boar: breedingRecord.boar,     // auto fill
             dateOfBirth: payload.dateOfBirth,
             piglets: [],
+            numberOfLivePiglets: payload.piglets.length,
+            numberOfDeadPiglets: payload.numberOfDeadPiglets,
             averageWeight: 0
+        });
+
+        let type;
+        if (breedingRecord?.sow?.herd?.type && breedingRecord?.boar?.herd?.type) {
+            type = breedingRecord.sow.herd.type + " and " + breedingRecord.boar.herd.type;
+        }
+
+        // Tạo con giống trong Herd
+        const newHerd = await HerdModel.create({
+            name: payload.herdName || null, // nếu có tên thì dùng, ko thì để tag
+            origin: "Internal sources",
+            birth_date: payload.dateOfBirth,
+            type, //breedingRecord.sow.herd.type + " and " + breedingRecord.boar.herd.type,
+            sex: payload.herdSex || 'piglet',
+            vaccination: false,
+            inventory: payload.piglets.length
         });
 
         // 3) Tạo piglet & update gbr
@@ -83,20 +249,9 @@ router.post('/givebirth/:breedingRecordId', async (req, res) => {
                 const tag = `PIG-${dateStr}-${String(counter).padStart(3, '0')}`;
                 counter++
 
-                // 1. Tạo con giống trong Herd
-                const newHerd = await HerdModel.create({
-                    name: p.name || tag, // nếu có tên thì dùng, ko thì để tag
-                    origin: "Born in farm",
-                    birth_date: payload.dateOfBirth,
-                    type: "piglet",
-                    sex: p.sex || 'piglet',
-                    vaccination: false,
-                    inventory: 1
-                });
-
-                // 2. Tạo lợn
+                // Tạo lợn
                 const newPig = await PigModel.create({
-                    tag: p.tag || undefined,
+                    tag: tag || undefined,
                     sex: p.sex || 'piglet',
                     herd: newHerd._id || undefined,
                     birthDate: payload.dateOfBirth || new Date(),
@@ -119,7 +274,7 @@ router.post('/givebirth/:breedingRecordId', async (req, res) => {
             sowId: breedingRecord.sow,
             boarId: breedingRecord.boar,
             birthCount: pigletDocs.length,
-            recordId: gbr._id
+            //recordId: gbr._id
         });
 
         res.json({ success: true, data: gbr });
@@ -129,6 +284,9 @@ router.post('/givebirth/:breedingRecordId', async (req, res) => {
         res.status(400).json({ success: false, message: err.message });
     }
 });
+
+
+/* -------------------------------------------------------------------------- */
 
 router.post('/weaning/:birthId', async (req, res) => {
   try {

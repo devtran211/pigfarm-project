@@ -1,6 +1,10 @@
 var mongoose = require('mongoose');
 
 const GiveBirthRecordSchema = mongoose.Schema({
+    breedingRecord: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'breeding_records' 
+    },
     sow: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'pigs', 
