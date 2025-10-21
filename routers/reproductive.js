@@ -16,8 +16,23 @@ router.get('/suggest/:sowId', async (req, res) => {
         res.status(400).json({ success: false, message: err.message });
     }
 });
-
 /* ------------------------------------------------------------------------------------ */
+// Show data of breeding record
+router.get('/breeding-records', async (req, res) => {
+  try {
+    const records = await BreedingRecordModel.find({ isDeleted: false })
+      .populate('sow', 'tag breed sex')   // chỉ lấy data cần thiết
+      .populate('boar', 'tag breed sex')  // tránh populate quá nặng
+      .sort({ createdAt: -1 });           // mới nhất đứng trước
+
+    res.json({ success: true, data: records });
+
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
 // Create a breeding record
 router.post('/breeding-record/add', async (req, res) => {
     try {
@@ -198,8 +213,24 @@ router.delete('/breeding-record/:recordId/attempt/:index', async (req, res) => {
     res.status(400).json({ success: false, message: err.message });
   }
 });
-
 /* ------------------------------------------------------------------------------------- */
+router.get('/givebirth-records', async (req, res) => {
+  try {
+    const records = await GiveBirthRecordModel.find({ isDeleted: false })
+      .populate('sow', 'tag breed sex')   // lấy ít thông tin cần thiết từ bảng pigs
+      .populate('boar', 'tag breed sex')
+      .populate('piglets.pigId', 'tag sex birthDate') // populate cả piglets
+      .populate('breedingRecord', 'attempts pregnant expectedBirthDate') // liên kết ngược
+      .sort({ dateOfBirth: -1 }); // ưu tiên mới nhất
+
+    res.json({ success: true, data: records });
+
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
 router.post('/givebirth/:breedingRecordId', async (req, res) => {
     try {
         const breedingRecordId = req.params.breedingRecordId;
@@ -221,18 +252,19 @@ router.post('/givebirth/:breedingRecordId', async (req, res) => {
             averageWeight: 0
         });
 
-        let type;
+        let Herdtype;
         if (breedingRecord?.sow?.herd?.type && breedingRecord?.boar?.herd?.type) {
-            type = breedingRecord.sow.herd.type + " and " + breedingRecord.boar.herd.type;
+            Herdtype = String(breedingRecord.sow.herd.type) + " and " + String(breedingRecord.boar.herd.type);
         }
-
+        console.log(Herdtype);
         // Tạo con giống trong Herd
         const newHerd = await HerdModel.create({
             name: payload.herdName || null, // nếu có tên thì dùng, ko thì để tag
             origin: "Internal sources",
             birth_date: payload.dateOfBirth,
-            type, //breedingRecord.sow.herd.type + " and " + breedingRecord.boar.herd.type,
+            type: Herdtype, //breedingRecord.sow.herd.type + " and " + breedingRecord.boar.herd.type,
             sex: payload.herdSex || 'piglet',
+            health: payload.herdHealth,
             vaccination: false,
             inventory: payload.piglets.length
         });
@@ -267,6 +299,9 @@ router.post('/givebirth/:breedingRecordId', async (req, res) => {
             // Làm tròn 2 chữ số thập phân
             gbr.averageWeight = Math.round(avg * 100) / 100;
             await gbr.save();
+
+            newHerd.weight_at_import = gbr.averageWeight;
+            await newHerd.save();
         }
 
         // 4) Update performance
@@ -285,9 +320,77 @@ router.post('/givebirth/:breedingRecordId', async (req, res) => {
     }
 });
 
+router.put('/givebirth/edit/:id', async (req, res) => {
+  try {
+    const recordId = req.params.id;
+    const payload = req.body;
 
-/* -------------------------------------------------------------------------- */
+    let record = await GiveBirthRecordModel.findById(recordId).populate('piglets.pigId');
+    if (!record) throw new Error('GiveBirthRecord not found');
 
+    // UPDATE NOTE, DELETE FLAGS, DEAD COUNT
+    if (payload.numberOfDeadPiglets !== undefined)
+      record.numberOfDeadPiglets = payload.numberOfDeadPiglets + (record.piglets.length - payload.piglets?.length || 0);
+    if (payload.note !== undefined) record.note = payload.note;
+    if (payload.isDeleted !== undefined) record.isDeleted = payload.isDeleted;
+
+    // UPDATE piglets (structure B: merge, not replace completely)
+    if (Array.isArray(payload.piglets)) {
+      for (const updatedPig of payload.piglets) {
+        const existingPig = record.piglets.find(p => p.pigId.toString() === updatedPig.pigId);
+        if (existingPig) {
+          // Cập nhật birthWeight nếu có
+          if (updatedPig.birthWeight !== undefined)
+            existingPig.birthWeight = updatedPig.birthWeight;
+
+          // ✅ UPDATE PigModel (real DB pig) nếu có sex hoặc birthDate
+          const pigData = {};
+          if (updatedPig.sex !== undefined) pigData.sex = updatedPig.sex;
+          if (updatedPig.birthDate !== undefined) pigData.birthDate = new Date(updatedPig.birthDate);
+
+          if (Object.keys(pigData).length > 0) {
+            await PigModel.findByIdAndUpdate(updatedPig.pigId, pigData);
+          }
+        }
+      }
+
+      // Auto re-sync number of live piglets
+      record.numberOfLivePiglets = record.piglets.length;
+
+      // Auto re-sync average weight
+      const totalWeight = record.piglets.reduce((s, x) => s + (x.birthWeight || 0), 0);
+      record.averageWeight =
+        record.piglets.length > 0 ? Math.round((totalWeight / record.piglets.length) * 100) / 100 : 0;
+
+      await record.save();
+
+      // ✅ UPDATE lại Herd
+      const herd = await HerdModel.findOne({ inventory: record.piglets.length });
+      if (herd) {
+        herd.birth_date = record.dateOfBirth;
+        herd.weight_at_import = record.averageWeight;
+
+        // AUTO set herd.sex theo majority
+        const femaleCount = record.piglets.filter(p => p.pigId?.sex === 'sow').length;
+        const maleCount   = record.piglets.filter(p => p.pigId?.sex === 'boar').length;
+
+        herd.sex = femaleCount > maleCount ? 'sow'
+                  : maleCount > femaleCount ? 'boar'
+                  : 'mixed'; // nếu số lượng bằng nhau
+
+        await herd.save();
+      }
+    }
+
+    res.json({ success: true, data: record });
+
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+/* -------------------------------------------------------------------------------------- */
 router.post('/weaning/:birthId', async (req, res) => {
   try {
     const birthId = req.params.birthId;
