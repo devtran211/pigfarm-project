@@ -3,15 +3,16 @@ var mongoose = require('mongoose');
 var HerdSchema = mongoose.Schema({
    name: String,
    origin: String,
-   date_of_entry: Date,
-   birth_date: Date,
+   dateOfEntry: { type: Date, default: Date.now },
    type: String,
-   sex: String,
-   weight_at_import: Number,
-   health: String,
+   sex: { type: String, enum: ["boar", "sow"], default: "mixed" },
+   weightAtImport: Number,
+   health: { type: String, default: "good" },
    vaccination: Boolean,
    inventory: Number,
-   import_price: Number,
+   originalIventory: Number,
+   importPrice: { type: Number, default: 0 },
+   note: String,
    invoice: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'invoices' 

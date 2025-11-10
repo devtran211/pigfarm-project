@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
 
-var PigSchema = mongoose.Schema({
+var PigSchema = new mongoose.Schema({
    tag: String,
    birthDate: Date,
    sex: { 
@@ -12,11 +12,6 @@ var PigSchema = mongoose.Schema({
       father: { type: mongoose.Schema.Types.ObjectId, ref: 'pigs' },
       mother: { type: mongoose.Schema.Types.ObjectId, ref: 'pigs' }
    },
-   // reproduction: {
-   //    parityCount: { type: Number, default: 0 },
-   //    lastMatingDate: Date,
-   //    lastGiveBirthDate: Date
-   // },
    herd: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'herds'
@@ -26,7 +21,6 @@ var PigSchema = mongoose.Schema({
       ref: 'barns'
    },
    status: String,
-   meta: mongoose.Schema.Types.Mixed,
    isDeleted: { type: Boolean, default: false }
 });
 

@@ -18,12 +18,9 @@ const GiveBirthRecordSchema = mongoose.Schema({
         type: Date, 
         default: Date.now 
     },
+    totalBorn: { type: Number, default: 0 },
     numberOfLivePiglets: Number,
     numberOfDeadPiglets: Number,
-    piglets: [{
-        pigId: { type: mongoose.Schema.Types.ObjectId, ref: 'pigs' },
-        birthWeight: Number
-    }],
     averageWeight: Number,
     note: String,
     isDeleted: { type: Boolean, default: false }

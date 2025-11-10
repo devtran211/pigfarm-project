@@ -6,12 +6,11 @@ const WeaningSchema = mongoose.Schema({
         ref: 'pigs' 
     },
     weaningDay: Date,
-    numberOfLivePiglets: number,
+    numberOfLivePiglets: Number,
     sowHealth: String,
     pigletHealth: String,
     avgWeaningWeightKg: Number,
     note: String,
-    isDeleted: { type: Boolean, default: false },
     birthRecord: { type: mongoose.Schema.Types.ObjectId, ref: 'GiveBirthRecord' }
 });
 

@@ -6,12 +6,13 @@ const GrowthTrackingSchema = mongoose.Schema({
         required: true, 
         index: true 
     },
-    date: { 
+    dateOfImplementation: { 
         type: Date, 
         default: Date.now 
     },
     weight: Number,
     length: Number,
+    fcr: Number,
     note: String,
     isDeleted: { type: Boolean, default: false }
 }, { timestamps: true });

@@ -18,7 +18,10 @@ const foodrationRoute = require('./routers/foodration')
 const feedinglogRoute = require('./routers/feedinglog');
 const drugUseLogRoute = require('./routers/druguselog');
 const druguseRoute = require('./routers/druguse');
-const reproductiveRoute = require('./routers/reproductive');
+const growthtrackingRoute = require('./routers/growthtracking');
+const breedingRoute = require('./routers/breeding');
+const givebirthRoute = require('./routers/givebirth');
+const weaningRoute = require('./routers/weaning');
 const invoiceRoute = require('./routers/invoice');
 const supplierRoute = require('./routers/supplier');
 
@@ -47,7 +50,10 @@ app.use('/api/food-ration', foodrationRoute);
 app.use('/api/feeding-log', feedinglogRoute);
 app.use('/api/drug-use-log', drugUseLogRoute);
 app.use('/api/drug-use', druguseRoute);
-app.use('/api/reproductive', reproductiveRoute);
+app.use('/api/growth-tracking', growthtrackingRoute);
+app.use('/api/breeding-record', breedingRoute);
+app.use('/api/give-birth', givebirthRoute);
+app.use('/api/weaning', weaningRoute);
 app.use('/api/invoice', invoiceRoute);
 app.use('/api/supplier', supplierRoute);
 

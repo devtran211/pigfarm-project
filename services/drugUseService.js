@@ -5,6 +5,7 @@ const DrugUseLogModel = require("../models/DrugUseLog");
 const MeditionWareHouseModel = require("../models/MeditionWareHouse");
 const BarnModel = require("../models/Barn");
 const { parseCapacity, toBaseUnit } = require("./cvs");
+const { calculateAndSaveInvestmentMedCost } = require("./calculatePricePerBarn");
 
 /* Tính số lượng chai/lọ cần dùng dựa trên số lợn, số ngày, dung tích thuốc */
 function calculateInventoryNeeded(dosagePerAnimal, unit, medition, numberOfPigs = 1, numberOfDays = 1) {
@@ -15,6 +16,8 @@ function calculateInventoryNeeded(dosagePerAnimal, unit, medition, numberOfPigs 
 
     const baseDosage = toBaseUnit(totalDosage, unit);
     const baseCapacity = toBaseUnit(amount, capacityUnit);
+
+    console.log("Đơn vị: ", baseDosage, " ",baseCapacity);
 
     if (baseDosage.type !== baseCapacity.type) {
         throw new Error(`Đơn vị liều và capacity không khớp: ${baseDosage.type} vs ${baseCapacity.type}`);
@@ -42,10 +45,11 @@ async function createDrugUse(payload) {
     const timeDiff = endDate.getTime() - startDate.getTime();
     const numberOfDays = Math.max(Math.ceil(timeDiff / (1000 * 60 * 60 * 24)) + 1, 1);
 
+    let toDeductMed;
     // 3. Với mỗi chuồng → tạo riêng một DrugUse
     for (let barn of barns) {
         const barnPigCount = barn.total_pigs || 0;
-
+        toDeductMed = [];
         // 3.1 Tạo DrugUse riêng cho từng chuồng
         const drugUse = await DrugUseModel.create({
             start_date,
@@ -72,6 +76,12 @@ async function createDrugUse(payload) {
                 throw new Error(`Kho không đủ thuốc ${med.name} cho chuồng ${barn.name}. Cần ${neededUnits}, tồn kho ${med.inventory}`);
             }
 
+            toDeductMed.push({
+              import_price: Number(med.import_price),
+              originalInventory: Number(med.original_inventory),
+              requiredUnits: Number(neededUnits)
+            });
+
             med.inventory -= Number(neededUnits || 0);
             await med.save();
 
@@ -88,7 +98,7 @@ async function createDrugUse(payload) {
             });
         }
     }
-
+    calculateAndSaveInvestmentMedCost({barns, toDeductMed}); 
     return { message: "Tạo áp dụng thuốc thành công cho từng chuồng!" };
 }
 
@@ -106,6 +116,7 @@ async function editDrugUse(drugUseId, payload) {
   const session = await mongoose.startSession();
   try {
     let finalResult = null;
+    let toDeductMed = [];
 
     await session.withTransaction(async () => {
       // 1) Load existing DrugUse
@@ -150,10 +161,20 @@ async function editDrugUse(drugUseId, payload) {
         );
 
         console.log("Lượng thuốc của bữa cũ: " + units);
+        const usedUnit = units - daysToReturn;
 
         const key = med._id.toString();
         rollbackMap.set(key, (rollbackMap.get(key) || 0) + units);
+
+        if(completedCount > 0){
+          toDeductMed.push({
+            import_price: Number(med.import_price),
+            originalInventory: Number(med.original_inventory),
+            requiredUnits: usedUnit
+          })
+        } 
       }
+      calculateAndSaveInvestmentMedCost({barns: [oldBarn], toDeductMed});
 
       // Apply rollback to med inventories
       for (const [medId, qty] of rollbackMap.entries()) {
@@ -168,7 +189,7 @@ async function editDrugUse(drugUseId, payload) {
       const oldDetailIds = oldDetails.map(d => d._id);
       if (oldDetailIds.length > 0) {
         // delete logs referencing these details
-        await DrugUseLogModel.deleteMany({ med_details: { $in: oldDetailIds } }).session(session);
+        // await DrugUseLogModel.deleteMany({ med_details: { $in: oldDetailIds } }).session(session);
         // delete the details
         await DrugUseDetailModel.deleteMany({ _id: { $in: oldDetailIds } }).session(session);
       }
@@ -208,6 +229,7 @@ async function editDrugUse(drugUseId, payload) {
         const createdDrugUses = [];
 
         for (const barn of targetBarns) {
+          //toDeductMed = [];
           // Overlap check: any other DrugUse (excluding the deleted one) that overlaps with newStart-newEnd
           const overlapping = await DrugUseModel.findOne({
             barn: barn._id,
@@ -259,6 +281,11 @@ async function editDrugUse(drugUseId, payload) {
               Number(barn.total_pigs || 0),
               newNumberOfDays
             );
+            toDeductMed.push({
+              import_price: Number(med.import_price || 0),
+              originalInventory: Number(med.original_inventory || 0),
+              requiredUnits: Number(units)
+            });
             const key = med._id.toString();
             deductMap.set(key, (deductMap.get(key) || 0) + units);
           }
@@ -298,6 +325,7 @@ async function editDrugUse(drugUseId, payload) {
             await DrugUseDetailModel.insertMany(detailsToInsert, { session });
           }
 
+          calculateAndSaveInvestmentMedCost({barns: [barn], toDeductMed})
           createdDrugUses.push(newDrugUse);
         } // end for each target barn
 
@@ -339,6 +367,11 @@ async function editDrugUse(drugUseId, payload) {
             newNumberOfDays
           );
           console.log("Số lượng của bữa mới: " + units);
+          toDeductMed.push({
+            import_price: Number(med.import_price || 0),
+            originalInventory: Number(med.original_inventory || 0),
+            requiredUnits: Number(units)
+          });
           const key = med._id.toString();
           deductMap.set(key, (deductMap.get(key) || 0) + units);
         }
@@ -379,6 +412,7 @@ async function editDrugUse(drugUseId, payload) {
           await DrugUseDetailModel.insertMany(detailsToInsert, { session });
         }
 
+        calculateAndSaveInvestmentMedCost({barns: [oldBarn], toDeductMed});
         finalResult = oldDrugUse;
       } // end barn unchanged branch
 
@@ -414,11 +448,13 @@ async function deleteDrugUse({ drugUseId = null, areaId = null } = {}) {
   const session = await mongoose.startSession();
     try {
         const summary = {
-        deletedDrugUses: 0,
-        deletedDetails: 0,
-        deletedLogs: 0,
-        medsReturned: [] // { medition_id, name, unitsReturned, inventoryAfter }
+          deletedDrugUses: 0,
+          deletedDetails: 0,
+          deletedLogs: 0,
+          medsReturned: [] // { medition_id, name, unitsReturned, inventoryAfter }
         };
+
+        let toDeductMed = [];
 
         await session.withTransaction(async () => {
         // accumulate returns per medId
@@ -442,6 +478,14 @@ async function deleteDrugUse({ drugUseId = null, areaId = null } = {}) {
                 const med = await MeditionWareHouseModel.findById(det.medition_warehouse).session(session);
                 if (!med) throw new Error(`Medition warehouse không tồn tại: ${det.medition_warehouse}`);
 
+                // count completed logs for this detail
+                const completedCount = await DrugUseLogModel.countDocuments({
+                    med_details: det._id,
+                    time: det.time,
+                    status: "completed"
+                }).session(session);
+                console.log(completedCount);
+
                 // total units originally deducted for this detail (dosage * barnPigs * duDays)
                 const unitsTotal = calculateInventoryNeeded(
                     det.dosage,
@@ -450,13 +494,6 @@ async function deleteDrugUse({ drugUseId = null, areaId = null } = {}) {
                     barnPigs,
                     duDays
                 );
-
-                // count completed logs for this detail
-                const completedCount = await DrugUseLogModel.countDocuments({
-                    med_details: det._id,
-                    time: det.time,
-                    status: "Hoàn thành"
-                }).session(session);
 
                 // units completed:
                 const unitsCompleted = calculateInventoryNeeded(
@@ -468,6 +505,16 @@ async function deleteDrugUse({ drugUseId = null, areaId = null } = {}) {
                 );
                 console.log(unitsCompleted);
 
+                if(completedCount > 0)
+                {
+                  usedUnits = unitsCompleted - completedCount;
+                  toDeductMed.push({
+                    import_price: Number(med.import_price),
+                    originalInventory: Number(med.original_inventory),
+                    requiredUnits: usedUnits
+                  })
+                }
+
                 // units to return = total - completed
                 let unitsToReturn = Number(unitsTotal || 0) - Number(unitsCompleted || 0);
                 if (unitsToReturn < 0) unitsToReturn = 0;
@@ -478,8 +525,8 @@ async function deleteDrugUse({ drugUseId = null, areaId = null } = {}) {
                 }
 
                 // delete logs for this detail
-                const delLogRes = await DrugUseLogModel.deleteMany({ med_details: det._id }).session(session);
-                summary.deletedLogs += delLogRes.deletedCount || 0;
+                //const delLogRes = await DrugUseLogModel.deleteMany({ med_details: det._id }).session(session);
+                //summary.deletedLogs += delLogRes.deletedCount || 0;
 
                 // delete detail
                 const delDetRes = await DrugUseDetailModel.deleteOne({ _id: det._id }).session(session);
@@ -489,6 +536,8 @@ async function deleteDrugUse({ drugUseId = null, areaId = null } = {}) {
             // delete du
             const delDuRes = await DrugUseModel.deleteOne({ _id: du._id }).session(session);
             summary.deletedDrugUses += delDuRes.deletedCount || 0;
+
+            calculateAndSaveInvestmentMedCost({barns: [barn], toDeductMed});
         } // end for each DrugUse
 
         // apply med returns

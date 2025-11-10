@@ -1,24 +1,25 @@
 var mongoose = require('mongoose');
 
-const BreedingRecordSchema = mongoose.Schema({
-    sow: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'pigs', 
-        required: true, 
-        index: true },
-    boar: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'pigs' 
-    },
-    attempts: [{
-        date: { type: Date, default: Date.now },
-        method: { type: String, enum: ['natural','artificial'] },
-        success: { type: Boolean, default: false }
-    }],
-    pregnant: { type: Boolean, default: false },
-    expectedBirthDate: Date,
-    note: String,
-    isDeleted: { type: Boolean, default: false }
+const AttemptSchema = new mongoose.Schema({
+  date: { type: Date, required: true },
+  method: { type: String, enum: ["Natural", "AI"], default: "AI" },
+  note: String,
+  isSuccessful: { type: Boolean, default: null },
+});
+
+const BreedingRecordSchema = new mongoose.Schema({
+  sow: { type: mongoose.Schema.Types.ObjectId, ref: "pigs", required: true },
+  boar: { type: mongoose.Schema.Types.ObjectId, ref: "pigs", required: true },
+  fertility_score: Number,      // readinessScore (nái)
+  boar_match_score: Number,     // matchScore (đực)
+  attempts: [AttemptSchema],    // 🔥 Nhiều lần phối trong 1 chu kỳ
+  expectedBirthDate: Date,
+  note: String,
+  status: {
+    type: String,
+    enum: ["Pending", "Pregnant", "Failed", "Gave birth"],
+    default: "Pending"
+  },
 }, { timestamps: true });
 
 var BreedingRecordModel = mongoose.model('breeding_records', BreedingRecordSchema); 

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const BarnModel = require('../models/Barn');
 const FoodRationModel = require('../models/FoodRation');
 const FeedingLogModel = require('../models/FeedingLog');
-const FoodWarehouseModel = require('../models/FoodWarehouse');
+const FoodWarehouseModel = require('../models/FoodWareHouse');
 const MeditionWarehouseModel = require('../models/MeditionWareHouse');
 const RationFoodDetailModel = require('../models/RationFoodDetail');
 const RationMeditionDetailModel = require('../models/RationMeditionDetail');
@@ -130,7 +130,7 @@ async function createFoodRationService(payload) {
           throw new Error(`FoodWarehouse ${fw.name} có weight không hợp lệ: ${fw.weight} ${fw.unit}`);
         }
         const requiredBags = Math.ceil(totalKg / bagWeightKg);
-        const originalInventory = Number(fw.inventory || 0);
+        const originalInventory = Number(fw.original_inventory || 0);
         const import_price = Number(fw.import_price || 0);
         if (fw.inventory < requiredBags) throw new Error(`Không đủ thức ăn "${fw.name}". Cần ${requiredBags} bao, còn ${fw.inventory} bao.`);
         toDeductFood.push({ fw, requiredBags, requiredKg: totalKg, bagWeightKg, originalInventory, import_price});
@@ -193,7 +193,7 @@ async function createFoodRationService(payload) {
         let requiredUnits = info.totalBase / capBase.base;
         if(requiredUnits < 1) requiredUnits += 1;
         requiredUnits = Math.ceil(requiredUnits);
-        const originalInventory = Number(mw.inventory || 0);
+        const originalInventory = Number(mw.original_inventory || 0);
         const import_price = Number(mw.import_price || 0);
         if (mw.inventory < requiredUnits) throw new Error(`Không đủ thuốc "${mw.name}". Cần ${requiredUnits}, còn ${mw.inventory}`);
         toDeductMed.push({ mw, requiredUnits, requiredBase: info.totalBase, baseType: info.baseType, originalInventory, import_price });
@@ -547,8 +547,7 @@ async function updateFoodRationService(id, payload) {
             requiredBags: Number(usedBags)
           });     
           resultSummary.returnedFood.push({ warehouseId: fw._id, warehouseName: fw.name, meal: mealName, returnedBags: returnBags, returnedKg: totalReturnKg });
-        }
-        
+        }  
 
         // MED: find med detail for meal and return units based on dosage
         const mDetail = await RationMeditionDetailModel.findOne({ food_ration: id, meal: mealName }).session(session);
@@ -777,22 +776,34 @@ async function deleteFoodRationService({ foodRationId, breedingAreaId }) {
       let toDeductFood = []
       let toDeductMed = []
 
-      // 2️⃣ Xử lý từng FoodRation
+      // Xử lý từng FoodRation
       for (const ration of rations) {
+        // ✅ Kiểm tra thời gian trước khi cho phép xóa
+        const now = new Date();
+        const start_Time = new Date(ration.start_time);
+        const endT_ime = new Date(ration.end_time);
+        const daysAfterStart = (now - startTime) / (1000 * 60 * 60 * 24);
+
+        if (daysAfterStart > 2 && now > endTime) {
+          throw new Error(
+            `Không thể xóa khẩu phần "${ration.name || ration._id}" vì đã quá 2 ngày kể từ ngày bắt đầu và thời gian kết thúc (${endTime.toLocaleDateString()}) đã qua.`
+          );
+        }
+
         const foodDetails = await RationFoodDetailModel.find({ food_ration: ration._id }).session(session);
         const medDetails = await RationMeditionDetailModel.find({ food_ration: ration._id }).session(session);  
 
-        // 3️⃣ Tính số ngày thực hiện còn lại dựa trên log “Hoàn thành”
+        // Tính số ngày thực hiện còn lại dựa trên log “Hoàn thành”
         const startTime = new Date(ration.start_time);
         const endTime = new Date(ration.end_time);
         const totalDaysForMeal = Math.max(1, Math.ceil((endTime - startTime) / (1000 * 60 * 60 * 24)));
         const feedsPerDay = ration.number_of_feedings_per_day || 1;
 
-        // 4️⃣ Tính tổng số lợn trong các barn
+        // Tính tổng số lợn trong các barn
         barns = await BarnModel.find({ _id: { $in: ration.barn } }).session(session);
         const totalPigs = barns.reduce((sum, b) => sum + (b.total_pigs || 0), 0);
 
-        // 5️⃣ Trả lại inventory cho thức ăn
+        // Trả lại inventory cho thức ăn
         for (const f of foodDetails) {
           if (!f.food_warehouse) continue;
           const fw = await FoodWarehouseModel.findById(f.food_warehouse).session(session);
@@ -838,7 +849,7 @@ async function deleteFoodRationService({ foodRationId, breedingAreaId }) {
 
         console.log("---------------------------------------------------------------");
         
-        // 6️⃣ Trả lại inventory cho thuốc
+        // Trả lại inventory cho thuốc
         for (const m of medDetails) {
             const whId = m.medition_warehouse || m.food_warehouse;
             if (!whId) continue;
@@ -886,7 +897,7 @@ async function deleteFoodRationService({ foodRationId, breedingAreaId }) {
                 });
             }
           }
-        // 7️⃣ Xóa log, chi tiết, và ration
+        // Xóa log, chi tiết, và ration
         //await FeedingLogModel.deleteMany({ food_ration: ration._id }).session(session);
         await RationFoodDetailModel.deleteMany({ food_ration: ration._id }).session(session);
         await RationMeditionDetailModel.deleteMany({ food_ration: ration._id }).session(session);
