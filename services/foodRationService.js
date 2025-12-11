@@ -7,7 +7,7 @@ const MeditionWarehouseModel = require('../models/MeditionWareHouse');
 const RationFoodDetailModel = require('../models/RationFoodDetail');
 const RationMeditionDetailModel = require('../models/RationMeditionDetail');
 const { parseCapacity, toBaseUnit, normalizeWeightToKg } = require("./cvs");
-const { calculateAndSaveInvestmentCost } = require("../services/calculatePricePerBarn");
+const { calculateAndSaveInvestmentCost, calculateAndSaveInvestmentUpdateCost } = require("../services/calculatePricePerBarn");
 
 async function computeFoodKgMapFromDetails(details, barns, feeds, days) {
   const map = {};
@@ -79,14 +79,14 @@ async function createFoodRationService(payload) {
       const {
         barn, breedingArea,
         foodDetails = [], medDetails = [],
-        number_of_feedings_per_day = 1,
+        number_of_feedings_per_day,
         start_time, end_time, name
       } = payload;
 
       // --- Resolve barns ---
       let barnIds = Array.isArray(barn) && barn.length ? barn : [];
       if ((!barnIds || barnIds.length === 0) && breedingArea) {
-        const allBarns = await BarnModel.find({ breedingarea: breedingArea }).select('_id').session(session);
+        const allBarns = await BarnModel.find({ area: breedingArea }).select('_id').session(session);
         barnIds = allBarns.map(b => b._id);
       }
       if (!barnIds || barnIds.length === 0) throw new Error("Phải cung cấp barn (hoặc breedingArea) hợp lệ.");
@@ -190,9 +190,9 @@ async function createFoodRationService(payload) {
         if (capBase.type !== info.baseType) {
           throw new Error(`Loại đơn vị giữa dosage (${info.baseType}) và capacity (${capBase.type}) không khớp cho ${mw.name}`);
         }
-        let requiredUnits = info.totalBase / capBase.base;
-        if(requiredUnits < 1) requiredUnits += 1;
-        requiredUnits = Math.ceil(requiredUnits);
+        const requiredUnits = info.totalBase / capBase.base;
+        // if(requiredUnits < 1) requiredUnits += 1;
+        // requiredUnits = Math.ceil(requiredUnits);
         const originalInventory = Number(mw.original_inventory || 0);
         const import_price = Number(mw.import_price || 0);
         if (mw.inventory < requiredUnits) throw new Error(`Không đủ thuốc "${mw.name}". Cần ${requiredUnits}, còn ${mw.inventory}`);
@@ -297,7 +297,7 @@ async function updateFoodRationService(id, payload) {
 
       const now = new Date();
       if (new Date(old.end_time) < now) {
-        throw new Error('Không thể chỉnh sửa khẩu phần vì đã quá thời gian kết thúc (end_time).');
+        throw new Error('Không thể chỉnh sửa khẩu phần vì đã quá thời gian kết thúc (end_Time).');
       }
 
       // 2) resolve barnsOld and barnsNew
@@ -311,12 +311,12 @@ async function updateFoodRationService(id, payload) {
       // 2.a) BUILD newBarnIds (array of ObjectId strings) for uniqueness checks and update
       const newBarnIds = barnsNew.map(b => String(b._id));
 
-      // uniqueness check (Kiểu A: không cho phép barn có ration active khác)
+      // check: không cho phép barn có ration active khác
       for (const barnId of newBarnIds) {
         const conflict = await FoodRationModel.findOne({
           barn: barnId,
           _id: { $ne: id },
-          end_time: { $gte: now } // considered active
+          end_time: { $gte: now } 
         }).session(session).lean();
         if (conflict) {
           throw new Error(`Chuồng (id=${barnId}) đã có FoodRation active khác (id=${conflict._id}). Không thể gán.`);
@@ -500,7 +500,7 @@ async function updateFoodRationService(id, payload) {
         const executedFeedCount = await FeedingLogModel.countDocuments({
           food_ration: id,
           meal: mealName,
-          status: "Hoàn thành"
+          status: "Finished"
         }).session(session);
         const remainFeedCount = Math.max(0, totalDaysForMeal - executedFeedCount);
 
@@ -530,6 +530,7 @@ async function updateFoodRationService(id, payload) {
           console.log("fw.inventory " + fw.inventory);
           await fw.save({ session });
 
+          // usedbag to calculate cost
           const useKg = mealWeightKg * Number(feedsOld || 1) * pigs * totalDaysForMeal;
           const oldRequiredBags = Math.ceil(useKg / bagWeightKg);
           const usedBags = oldRequiredBags - returnBags;
@@ -609,7 +610,7 @@ async function updateFoodRationService(id, payload) {
         // finally delete the meal and its med detail
         await RationFoodDetailModel.deleteOne({ _id: fDetail._id }).session(session);
         if (mDetail) await RationMeditionDetailModel.deleteOne({ _id: mDetail._id }).session(session);
-        resultSummary.removedMeals.push({ meal: mealName });
+          resultSummary.removedMeals.push({ meal: mealName });
       } // end loop removeMeals
 
       // After removeMeals handled (returns already applied), apply the global return/deduct for the overall update (for meals that are updated/kept)
@@ -781,12 +782,12 @@ async function deleteFoodRationService({ foodRationId, breedingAreaId }) {
         // ✅ Kiểm tra thời gian trước khi cho phép xóa
         const now = new Date();
         const start_Time = new Date(ration.start_time);
-        const endT_ime = new Date(ration.end_time);
-        const daysAfterStart = (now - startTime) / (1000 * 60 * 60 * 24);
+        const end_Time = new Date(ration.end_time);
+        const daysAfterStart = (now - start_Time) / (1000 * 60 * 60 * 24);
 
-        if (daysAfterStart > 2 && now > endTime) {
+        if (daysAfterStart > 2 && now > end_Time) {
           throw new Error(
-            `Không thể xóa khẩu phần "${ration.name || ration._id}" vì đã quá 2 ngày kể từ ngày bắt đầu và thời gian kết thúc (${endTime.toLocaleDateString()}) đã qua.`
+            `Không thể xóa khẩu phần "${ration.name || ration._id}" vì đã quá 2 ngày kể từ ngày bắt đầu và thời gian kết thúc (${end_Time.toLocaleDateString()}) đã qua.`
           );
         }
 

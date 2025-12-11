@@ -1,0 +1,603 @@
+<div class="main-content">
+    <div class="header-title">
+        <h2 class="farm-title">Sales Invoice</h2>
+        <p class="farm-subtitle">Sales order/export order</p>
+    </div>
+
+    <div class="container-farm">
+        
+        <div class="column-left">
+            
+            <div class="card-section input-item-section">
+                <div class="form-group-item">
+                    <label for="productName">Herd name *</label>
+                    <div class="input-with-button-select">
+                        <input type="text" id="productName">
+                        <button class="add-btn">+</button>
+                        <span class="dropdown-icon">▾</span>
+                    </div>
+                </div>
+
+                <div class="form-row price-row">
+                    <div class="form-group-item price-group">
+                        <label for="price">Price *</label>
+                        <div class="input-group-unit">
+                            <input type="text" id="price">
+                            <input type="hidden" id="totalPigs">
+                            <span class="unit-divider">|</span>
+                            <span class="unit-text">Pig</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="discount-section">
+                    <label for="discount">Discount</label>
+                    <div class="discount-options">
+                        <input type="text" id="discount" value="0">
+                        <input type="text" class="discount-type" value="%">
+                        <span class="discount-value"></span>
+                    </div>
+                    <button class="update-btn">
+                        <span class="icon">⟳</span> Update invoice
+                    </button>
+                </div>
+            </div>
+
+            <div class="card-section supplier-section">
+                <label for="supplier">Select customer *</label>
+                <div class="input-with-button-select">
+                    <select id="supplier">
+                        <option>-- Customer --</option>
+                    </select>
+                    <button class="add-btn"></button>
+                </div>
+                
+                <div class="form-row meta-row">
+                    <div class="form-group-item half-group">
+                        <label for="invoiceCode">Invoice code</label>
+                        <input type="text" id="invoiceCode">
+                    </div>
+                </div>
+                
+                <div class="form-group-item">
+                    <label for="note">Note</label>
+                    <textarea id="note"></textarea>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="column-right">
+            
+            <div class="invoice-summary-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Warehouse</th>
+                            <th>Product name</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="empty-row-message">
+                            <td colspan="7">The invoice is currently empty</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="total-summary">
+                    <div class="summary-line">
+                        <span>Total:</span>
+                        <span class="total-value">0₫</span>
+                    </div>
+                    <div class="summary-line dropdown-toggle">
+                        <span class="expandable">Discount:</span>
+                        <span class="discount-summary-value">0%</span>
+                    </div>
+                    <div class="summary-line dropdown-toggle">
+                        <span class="expandable">Others ▾</span>
+                        <span class="value">0₫</span>
+                    </div>
+                    <div class="summary-line final-total">
+                        <span>Total amount to be paid:</span>
+                        <span class="final-value">0₫</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-section payment-section">
+                <h4 class="section-heading">💳 Pay</h4>
+                <div class="form-row">
+                    <div class="form-group-item third-group">
+                        <label for="paidAmount">Amount to be paid (₫)</label>
+                        <input type="number" id="paidAmount" value="0">
+                        {{!-- <small>Tính vào công nợ: 0₫</small> --}}
+                    </div>
+                    <div class="form-group-item third-group">
+                        <label for="paymentDate">Payment date</label>
+                        <input type="date" id="paymentDate">
+                    </div>
+                    <div class="form-group-item third-group">
+                        <label for="paymentMethod">Payment status</label>
+                        <select id="paymentMethod">
+                            <option value="Paid">Paid</option>
+                            <option value="Half paid">Half paid</option>
+                            <option value="Unpaid">Unpaid</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-section import-section">
+                <h4 class="section-heading">📦 Stock out</h4>
+                <button id="releaseWarehouseBtn" class="release-btn">
+                    Release goods from the warehouse
+                </button>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<!-- Popup chọn chuồng -->
+<div id="barnPopup" class="barn-modal hidden">
+    <div class="barn-modal-content">
+        
+        <div class="barn-modal-header">
+            <h3>Select a Barn (Fattening)</h3>
+            <span class="barn-close-btn">&times;</span>
+        </div>
+
+        <div class="barn-modal-body">
+            <ul id="barnList" class="barn-list"></ul>
+        </div>
+
+    </div>
+</div>
+
+<script src="/js/sell-pigs.js"></script>
+
+<style>
+/* Thiết lập khoảng trống 230px cho sidebar và padding chung */
+.main-content {
+    margin-left: 100px; /* Khoảng trống cho sidebar */
+    padding: 20px;
+    background-color: #f4f6f8; /* Màu nền nhẹ cho trang chính */
+    min-height: 100vh;
+}
+
+.header-title {
+    margin-bottom: 20px;
+}
+
+.farm-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.farm-subtitle {
+    font-size: 14px;
+    color: #666;
+    margin: 5px 0 0 0;
+}
+
+/* Container chính chia 2 cột */
+.container-farm {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.column-left {
+    flex: 1; /* Chiếm khoảng 35-40% */
+    max-width: 450px; /* Giới hạn chiều rộng cột nhập liệu */
+}
+
+.column-right {
+    flex: 2; /* Chiếm khoảng 60-65% */
+}
+
+/* Các phần tử Form chung */
+.card-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+.form-group-item {
+    margin-bottom: 15px;
+}
+
+.form-group-item label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+/* Cấu trúc chia đôi cho row */
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.half-group, .third-group {
+    flex: 1;
+}
+
+/* --- CỘT TRÁI (INPUT) --- */
+
+/* Tên hàng hóa và Nhà cung cấp */
+.input-with-button-select {
+    display: flex;
+    position: relative;
+}
+
+.input-with-button-select input, 
+.input-with-button-select select {
+    padding-right: 50px; /* Đủ chỗ cho nút + và dropdown icon */
+}
+
+.input-with-button-select .add-btn {
+    position: absolute;
+    right: 30px; 
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #1a9c73; /* Màu xanh lá cây */
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 5px;
+    z-index: 10;
+}
+
+.input-with-button-select .dropdown-icon {
+    position: absolute;
+    right: 5px; 
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    pointer-events: none; /* Không cho icon chặn click vào input */
+}
+
+/* Đơn giá */
+.price-group {
+    flex: 1;
+}
+
+.input-group-unit {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    position: relative;
+}
+
+.input-group-unit input {
+    border: none;
+    padding: 10px;
+    flex: 1;
+}
+
+.unit-divider {
+    color: #ddd;
+    margin: 0 5px;
+}
+
+.unit-text {
+    padding-right: 25px;
+    color: #555;
+    font-size: 14px;
+}
+
+/* Chiết khấu */
+.discount-section {
+    padding: 10px 0 0 0;
+}
+
+.discount-options {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.discount-options input {
+    width: 80px;
+    flex: none;
+}
+
+.discount-options select {
+    width: 120px;
+    flex: none;
+    padding-right: 5px;
+}
+
+.discount-value {
+    font-weight: 600;
+    color: #1a9c73; /* Màu xanh lá cây */
+    font-size: 15px;
+}
+
+.update-btn {
+    background-color: #f0f7ff; 
+    color: #0b74de; /* Màu xanh dương */
+    border: 1px solid #d9d9d9;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* --- CỘT PHẢI (SUMMARY) --- */
+
+/* Bảng tổng hợp hóa đơn */
+.invoice-summary-section table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+}
+
+.invoice-summary-section th, .invoice-summary-section td {
+    padding: 10px;
+    text-align: left;
+    font-size: 13px;
+    border-bottom: 1px solid #eee;
+}
+
+.invoice-summary-section th {
+    background-color: #f7f7f7;
+    font-weight: 600;
+    color: #444;
+}
+
+.empty-row-message td {
+    background-color: #fff8e1; /* Màu vàng nhạt */
+    color: #856404;
+    text-align: center;
+    font-style: italic;
+    padding: 15px;
+    border: none;
+    border-top: 1px solid #eee;
+}
+
+/* Tổng tiền */
+.total-summary {
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 0 0 8px 8px;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #333;
+}
+
+.summary-line .expandable {
+    font-weight: 600;
+    cursor: pointer;
+    color: #666;
+}
+
+.final-total {
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    margin-top: 10px;
+    font-size: 16px;
+}
+
+.final-total .final-value {
+    font-weight: 700;
+    color: #1a9c73;
+}
+
+/* Thanh toán */
+.payment-section .section-heading,
+.import-section .section-heading {
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.payment-section small {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #888;
+}
+
+/* Nhập kho */
+.import-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.import-checkbox input {
+    width: auto;
+    margin: 0;
+}
+
+/* ----- Popup select barn ----- */
+/* -------------------------
+   POPUP OVERLAY
+-------------------------- */
+.barn-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* -------------------------
+   POPUP CONTENT
+-------------------------- */
+.barn-modal-content {
+    background: #fff;
+    width: 420px;
+    max-height: 80%;
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.25);
+    animation: fadeInScale 0.25s ease-out;
+}
+
+/* -------------------------
+   HEADER
+-------------------------- */
+.barn-modal-header {
+    padding: 16px 20px;
+    background: #2d89ef;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.barn-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.barn-close-btn {
+    font-size: 24px;
+    cursor: pointer;
+    transition: 0.2s;
+    font-weight: bold;
+}
+
+.barn-close-btn:hover {
+    color: #ffdddd;
+}
+
+/* -------------------------
+   BODY + LIST
+-------------------------- */
+.barn-modal-body {
+    padding: 12px 18px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.barn-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.barn-list li {
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.25s;
+    font-size: 15px;
+    border: 1px solid #ddd;
+}
+
+.barn-list li:hover {
+    background: #e8f1ff;
+    border-color: #2d89ef;
+    transform: translateX(2px);
+}
+
+/* -------------------------
+   ANIMATION
+-------------------------- */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.85);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Scrollbar đẹp */
+.barn-modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.barn-modal-body::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+
+.delete-row-btn {
+    background-color: #e53935; /* đỏ */
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.delete-row-btn:hover {
+    background-color: #c62828; /* đỏ đậm hơn khi hover */
+}
+
+.release-btn {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    font-size: 15px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.release-btn:hover {
+    background-color: #1e49b6;
+}
+
+</style>

@@ -1,0 +1,588 @@
+<div class="area-container">
+
+    <div class="area-header">
+        <h2>Area list</h2>
+
+        <button class="btn-create-area" id="openCreateModal">+ Create</button>
+    </div>
+
+    <div class="filter-row">
+
+        <div class="filter-item">
+            <label>Name</label>
+            <input type="text" placeholder="Search..." id="searchAreaByName">
+        </div>
+
+        <div class="filter-item">
+            <label>Number of barns</label>
+            <div class="filter-number-wrapper">
+                <input type="text" placeholder="Searching..." id="searchAreaByBarnCount">
+            </div>
+        </div>
+
+        <div class="filter-item">
+            <label>Type</label>
+            <select id="searchAreaByType">
+                <option value="">-- Select type --</option>
+                <option value="Boar">Boar</option>
+                <option value="Gestation">Gestation</option>
+                <option value="Farrowing">Farrowing</option>
+                <option value="Weaning">Weaning</option>
+                <option value="Gilt Development">Gilt Development</option>
+                <option value="Fattening">Fattening</option>
+                <option value="Isolation">Isolation</option>
+                <option value="Treatment">Treatment</option>
+                <option value="Restricted">Restricted</option>
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>Status</label>
+            <select id="searchAreaByStatus">
+                <option value="">-- Select status --</option>
+                <option value="Active">Active</option>
+                <option value="Empty">Empty</option>
+                <option value="Cleaning">Cleaning</option>
+                <option value="Disinfecting">Disinfecting</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>Creation date</label>
+            <input type="date" id="searchAreaByDate">
+        </div>
+    </div>
+
+    <table class="area-table">
+        <thead>
+            <tr>
+                <th>Area</th>
+                <th>Number of barns</th>
+                <th>Acreage (m2)</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Creation date</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {{#each area}}
+            <tr class="area-row" data-id="{{this._id}}">
+                <td>{{this.name}}</td>
+                <td>{{this.numberOfBarns}} ({{this.total_barns}} barns in use)</td>
+                <td>{{this.acreage}}</td>
+                <td>{{this.type}}</td>
+                <td>{{this.status}}</td>
+                <td>{{formatDate this.creationDate}}</td>
+                <td class="action-cell">
+                <div class="action-wrapper">
+                    <span class="action-more">⋮</span>
+
+                    <div class="action-menu">
+                        <button class="btn-edit" data-id="{{this._id}}">✏ Edit</button>
+                        <button class="btn-delete" data-id="{{this._id}}">🗑 Delete</button>
+                    </div>
+                </div>
+            </td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+
+<div id="createAreaModal" class="modal-overlay">
+    <div class="modal-content">
+        
+        <div class="header">
+            <h2>Create a new area</h2>
+            <button class="close-btn" aria-label="Close">&times;</button>
+        </div>
+
+        <div class="form-body">
+            
+            <form action="/area/create" method="POST">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label> Name <span class="required">*</span></label>
+                            <input type="text" name="name">
+                        </div>
+
+                        <div class="form-group">
+                            <label> Acreage (m2) <span class="required">*</span></label>
+                            <input type="text" name="acreage">
+                        </div>  
+                
+                        <div class="form-group">
+                            <label> Number of barns <span class="required">*</span></label>
+                            <input type="text" name="numberOfBarns">
+                        </div>  
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label> Type <span class="required">*</span></label>
+                                <select name="type">
+                                    <option value="Boar">Boar</option>
+                                    <option value="Gestation">Gestation</option>
+                                    <option value="Farrowing">Farrowing</option>
+                                    <option value="Weaning">Weaning</option>
+                                    <option value="Gilt Development">Gilt Development</option>
+                                    <option value="Fattening">Fattening</option>
+                                    <option value="Isolation">Isolation</option>
+                                    <option value="Treatment">Treatment</option>
+                                    <option value="Restricted">Restricted</option>			
+                                </select>
+                        </div>	
+                   
+                        <div class="form-group">
+                            <label> Status <span class="required">*</span></label>
+                                <select name="status">
+                                    <option value="Active">Active</option>
+                                    <option value="Empty">Empty</option>
+                                    <option value="Cleaning">Cleaning</option>
+                                    <option value="Disinfecting">Disinfecting</option>
+                                    <option value="Inactive">Inactive</option>			
+                                </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label> Creation date <span class="required">*</span></label>
+                            <input type="date" name="creationDate">
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Note</label>
+                        <textarea name="note"></textarea>
+                    </div>
+                </div>   
+
+                <div class="footer">
+                    <button type="button" class="save-btn">
+                        <i class="fas fa-save"></i> &#x1F4BE; Save
+                    </button>
+                </div>
+            </form> 
+
+    </div>
+</div>
+
+<div id="editAreaModal" class="modal-overlay">
+    <div class="modal-content">
+        
+        <div class="header">
+            <h2>Edit a new area</h2>
+            <button class="close-btn" aria-label="Close">&times;</button>
+        </div>
+
+        <div class="form-body">
+            
+            <form>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label> Name <span class="required">*</span></label>
+                            <input type="text" name="name">
+                        </div>
+
+                        <div class="form-group">
+                            <label> Acreage (m2) <span class="required">*</span></label>
+                            <input type="text" name="acreage">
+                        </div>  
+                
+                        <div class="form-group">
+                            <label> Number of barns <span class="required">*</span></label>
+                            <input type="text" name="numberOfBarns">
+                        </div>  
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label> Type <span class="required">*</span></label>
+                                <select name="type">
+                                    <option value="Boar">Boar</option>
+                                    <option value="Gestation">Gestation</option>
+                                    <option value="Farrowing">Farrowing</option>
+                                    <option value="Weaning">Weaning</option>
+                                    <option value="Gilt Development">Gilt Development</option>
+                                    <option value="Fattening">Fattening</option>
+                                    <option value="Isolation">Isolation</option>
+                                    <option value="Treatment">Treatment</option>
+                                    <option value="Restricted">Restricted</option>			
+                                </select>
+                        </div>	
+                   
+                        <div class="form-group">
+                            <label> Status <span class="required">*</span></label>
+                                <select name="status">
+                                    <option value="Active">Active</option>
+                                    <option value="Empty">Empty</option>
+                                    <option value="Cleaning">Cleaning</option>
+                                    <option value="Disinfecting">Disinfecting</option>
+                                    <option value="Inactive">Inactive</option>			
+                                </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label> Creation date <span class="required">*</span></label>
+                            <input type="date" name="creationDate">
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Note</label>
+                        <textarea name="note"></textarea>
+                    </div>
+                </div>   
+
+                <div class="footer">
+                    <button type="button" class="save-btn">
+                        <i class="fas fa-save"></i> &#x1F4BE; Save
+                    </button>
+                </div>
+            </form> 
+
+    </div>
+</div>
+
+<script src="/js/area.js"></script>
+
+<style>
+.area-container {
+    width: 100%;
+    padding: 20px;
+}
+
+.area-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.btn-create-area {
+    background: #1a9c73;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-create-area:hover {
+    background: #158563;
+}
+
+.filter-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    width: 180px;
+}
+
+.filter-item label {
+    font-size: 12px;
+    margin-bottom: 5px;
+    color: #777;
+}
+
+.filter-item input,
+.filter-item select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.filter-number-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.filter-number-wrapper input {
+    flex: 1;
+}
+
+.filter-icon {
+    margin-left: 5px;
+    background: #eee;
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.area-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.area-table th {
+    background: #f8f8f8;
+    padding: 12px;
+    text-align: left;
+    font-size: 13px;
+    color: #666;
+}
+
+.area-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.area-table tbody tr:hover {
+    background: #f4faff;
+}
+
+.text-right {
+    text-align: right;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.action-cell {
+    position: relative;
+}
+
+.action-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.action-more {
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.action-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 20px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    min-width: 120px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+
+.action-menu a {
+    display: block;
+    padding: 10px;
+    font-size: 14px;
+    text-decoration: none;
+    color: #333;
+}
+
+.action-menu a:hover {
+    background: #f2f8ff;
+}
+
+.action-menu a.delete {
+    color: #9c2824;
+}
+
+.action-menu a.delete:hover {
+    background: #ffeaea;
+}
+/* CSS create new */
+/* Container của Popup */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.2); /* Nền mờ phía sau */
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+}
+
+/* Header */
+.header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #aaa;
+}
+
+/* Body (Nội dung Form) */
+.form-body {
+    padding: 20px;
+}
+
+/* Bố cục Grid 2 cột */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+/* Định dạng chung cho Input/Select */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.form-group label {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.form-group label .required {
+    color: #e3342f; /* Màu đỏ cho dấu * */
+}
+
+.form-group input, 
+.form-group select,
+.form-group .custom-select-control {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Cần thiết lập cho các trường chiếm hết chiều rộng */
+.full-width {
+    grid-column: 1 / -1; /* Chiếm cả hai cột */
+}
+
+/* Custom style cho Khu nuôi (có nút +) */
+.input-with-icon {
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon input,
+.input-with-icon select {
+    flex-grow: 1;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+}
+
+.input-with-icon button {
+    background-color: #f8fafc;
+    border: 1px solid #ddd;
+    border-left: none;
+    padding: 10px 12px;
+    cursor: pointer;
+    color: #38c172; /* Màu xanh lá cây */
+    font-size: 16px;
+    border-radius: 0 4px 4px 0;
+    line-height: 1;
+}
+
+/* Custom style cho Loại thu hoạch (đa chọn/tag) */
+.harvest-select-control {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px 10px;
+    background-color: white;
+}
+
+.harvest-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #cfebe6; /* Màu xanh nhạt */
+    color: #2c7a7b;
+    padding: 4px 8px;
+    margin-right: 5px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.harvest-tag span {
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.harvest-arrow {
+    margin-left: auto;
+    color: #888;
+}
+
+/* Textarea */
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Footer (Nút Lưu) */
+.footer {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.save-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #02a42b; /* Màu xanh ngọc */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.save-btn i {
+    margin-right: 8px;
+}
+
+.area-row {
+    cursor: pointer;
+}
+
+.area-row .action-cell {
+    cursor: default;
+}
+</style>

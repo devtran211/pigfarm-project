@@ -6,14 +6,21 @@ const BarnSchema = new mongoose.Schema({
         require: true
     },
     acreage: String,
-    maximum_capacity: Number,
-    total_pigs: Number,
-    status: String,
-    start_date: Date,
+    maximumCapacity: Number,
+    total_pigs: {
+        type: Number,
+        default: 0,
+    },
+    status:{
+        type: String,
+        enum: ['Active','Empty','Cleaning', 'Disinfecting', 'Inactive'],
+        default: 'Empty'
+    },
+    creationDate: Date,
     note: String,
-    breedingarea: {
+    area: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'breedingareas' 
+      ref: 'areas' 
    },
 });
 

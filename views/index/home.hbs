@@ -1,0 +1,50 @@
+<div class="card shadow p-3">
+  <h3>Monthly revenue from pig sales</h3>
+  <canvas id="chartRevenueByMonth" height="120"></canvas>
+</div>
+
+<div class="card shadow p-3" style="margin-top: 20px;">
+  <h3>Total monthly medication costs</h3>
+  <canvas id="chartMedCostByMonth" height="120"></canvas>
+</div>
+
+<div class="card shadow p-3" style="margin-top: 20px;">
+  <h3>Monthly food costs</h3>
+  <canvas id="chartFoodCostByMonth" height="120"></canvas>
+</div>
+
+<div class="pie-card shadow p-3" style="margin-top: 20px;">
+  <h3>Pig mortality rate: Last month and this monthy</h3>
+  <canvas id="chartLossRate" height="120"></canvas>
+</div>
+
+<div class="pie-card shadow p-3" style="margin-top: 20px;">
+  <h3>Pig disease incidence rate: Last month and This month</h3>
+  <canvas id="chartDiseasePie" height="120"></canvas>
+</div>
+
+
+<script src="/js/chart.js"></script>
+<script src="/js/index.js"></script>
+
+<style>
+.pie-card {
+  width: 45%;
+  display: inline-block;
+  vertical-align: top;
+  margin-right: 2%;
+}
+
+.pie-card:nth-child(2) {
+  margin-right: 0;
+}
+
+/* Responsive: khi màn hình nhỏ, card xếp dọc */
+@media (max-width: 900px) {
+  .pie-card {
+    width: 100%;
+    margin-right: 0;
+  }
+}
+
+</style>

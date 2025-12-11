@@ -1,0 +1,645 @@
+<div id="currentArea" data-id="{{area._id}}"></div>
+<div class="page-title">Barn list – Area {{area.name}}</div>
+
+<div class="barn-filter-header">
+
+    <div class="barn-filter-left">
+
+        <div class="filter-group">
+            <label>Name</label>
+            <input type="text" placeholder="Searching..." id="searchBarnByName">
+        </div>
+
+        <div class="filter-group">
+            <label>Number of pigss</label>
+            <div class="filter-input-icon">
+                <input type="number" placeholder="Searching..." id="searchBarnByPigCount">
+                <span class="filter-icon">⚲</span>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label>Status</label>
+            <div class="custom-select">
+                <select id="searchBarnByStatus">
+                    <option value="">-- Select status --</option>
+                    <option value="Active">Active</option>
+                    <option value="Empty">Empty</option>
+                    <option value="Cleaning">Cleaning</option>
+                    <option value="Disinfecting">Disinfecting</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+                <span class="select-arrow">▼</span>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label>Creation date</label>
+            <input type="date" id="searchBarnByDate" placeholder="Tìm kiếm...">
+        </div>
+    </div>
+
+    <button class="btn-create-barn">+ Create</button>
+
+</div>
+
+<table class="custom-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Acreage</th>
+            <th>Total pigs</th>
+            <th>Maximum capacity</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {{#each barns}}
+            {{log barns}}
+            <tr class="barn-row" data-id="{{_id}}">
+                <td>{{this.name}}</td>
+                <td>{{this.acreage}}</td>
+                <td>{{this.total_pigs}}</td>
+                <td>{{this.maximumCapacity}}</td>
+                <td>{{this.status}}</td>
+                <td class="action-wrapper">
+                    <span class="action-more">⋮</span>
+                    <div class="action-menu">
+                        <button class="btn-edit" data-id="{{this._id}}">Edit</button>
+                        <button class="btn-delete" data-id="{{this._id}}">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        {{/each}}
+    </tbody>
+</table>
+
+<div id="createBarnModal" class="modal-overlay">
+    <div class="modal-content">
+        
+        <div class="header">
+            <h2>Create a new barn</h2>
+            <button class="close-btn" aria-label="Close">&times;</button>
+        </div>
+
+        <div class="form-body">
+            
+            <form>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label> Name <span class="required">*</span></label>
+                            <input type="text" name="name">
+                        </div>
+
+                        <div class="form-group">
+                            <label> Acreage (m2) <span class="required">*</span></label>
+                            <input type="text" name="acreage">
+                        </div>  
+                
+                        <div class="form-group">
+                            <label> Maximum capacity <span class="required">*</span></label>
+                            <input type="text" name="maximumCapacity">
+                        </div>  
+                    </div>
+
+                    <div class="form-grid">	
+                        <div class="form-group">
+                            <label> Status <span class="required">*</span></label>
+                                <select name="status">
+                                    <option value="">-- Select status --</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Empty">Empty</option>
+                                    <option value="Cleaning">Cleaning</option>
+                                    <option value="Disinfecting">Disinfecting</option>
+                                    <option value="Inactive">Inactive</option>			
+                                </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label> Creation date <span class="required">*</span></label>
+                            <input type="date" name="creationDate">
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Note</label>
+                        <textarea name="note"></textarea>
+                    </div>
+                </div>   
+
+                <div class="footer">
+                    <button type="button" class="save-btn">
+                        <i class="fas fa-save"></i> &#x1F4BE; Save
+                    </button>
+                </div>
+            </form> 
+    </div>
+</div>
+
+<div id="editBarnModal" class="modal-overlay">
+    <div class="modal-content">
+        
+        <div class="header">
+            <h2>Edit a barn</h2>
+            <button class="close-btn" aria-label="Close">&times;</button>
+        </div>
+
+        <div class="form-body">
+            
+            <form>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label> Name <span class="required">*</span></label>
+                            <input type="text" name="name">
+                        </div>
+
+                        <div class="form-group">
+                            <label> Acreage (m2) <span class="required">*</span></label>
+                            <input type="text" name="acreage">
+                        </div>  
+                
+                        <div class="form-group">
+                            <label> Maximum capacity <span class="required">*</span></label>
+                            <input type="text" name="maximumCapacity">
+                        </div>  
+                    </div>
+
+                    <div class="form-grid">	
+                        <div class="form-group">
+                            <label> Status <span class="required">*</span></label>
+                                <select name="status">
+                                    <option value="">-- Select status --</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Empty">Empty</option>
+                                    <option value="Cleaning">Cleaning</option>
+                                    <option value="Disinfecting">Disinfecting</option>
+                                    <option value="Inactive">Inactive</option>			
+                                </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label> Creation date <span class="required">*</span></label>
+                            <input type="date" name="creationDate">
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Note</label>
+                        <textarea name="note"></textarea>
+                    </div>
+                </div>   
+
+                <div class="footer">
+                    <button type="button" class="save-btn">
+                        <i class="fas fa-save"></i> &#x1F4BE; Save
+                    </button>
+                </div>
+            </form> 
+    </div>
+</div>
+
+<script src="/js/barn.js"></script>
+
+<style>
+.page-title {
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 25px;
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.custom-table th {
+    background: #f7f9fb;
+    padding: 12px;
+}
+.custom-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.action-wrapper {
+    position: relative;
+}
+
+.action-more {
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.action-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 25px;
+    background: white;
+    padding: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
+}
+.action-menu button {
+    background: none;
+    border: none;
+    padding: 10px 18px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+.action-menu button:hover {
+    background: #f2f8ff;
+}
+
+/* Wrapper để đẩy nút tạo chuồng sang phải */
+.barn-filter-wrapper {
+    width: 100%;
+    margin-bottom: 25px;
+}
+
+/* Hàng filter */
+.barn-filter {
+    display: flex;
+    align-items: flex-end;
+    gap: 25px;
+    width: 100%;
+}
+
+/* Hàng filter gom cả filter left và nút bên phải */
+.barn-filter-header {
+    display: flex;
+    justify-content: space-between; /* đẩy nút sang phải */
+    align-items: flex-end;
+    width: 100%;
+    margin-bottom: 25px;
+}
+
+/* Nhóm filter bên trái */
+.barn-filter-left {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap; /* nếu thiếu không gian, các filter xuống hàng */
+}
+
+/* Mỗi nhóm filter */
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #444;
+}
+
+/* Input cơ bản */
+.filter-group input,
+.custom-select select {
+    width: 160px;
+    padding: 8px 12px;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+    outline: none;
+}
+
+/* Icon trong input number */
+.filter-input-icon {
+    position: relative;
+}
+
+.filter-input-icon input {
+    width: 160px;
+}
+
+.filter-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+/* Select custom giống FarmGo */
+.custom-select {
+    position: relative;
+}
+
+.custom-select select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.select-arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    pointer-events: none;
+    transform: translateY(-50%);
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+/* Date input + icon */
+.filter-date {
+    position: relative;
+}
+
+.filter-date input {
+    width: 150px;
+}
+
+.calendar-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.6;
+    pointer-events: none;
+    font-size: 15px;
+}
+
+/* Nút tạo chuồng */
+.btn-create-barn {
+    margin-left: auto;
+    background: #1a9c73;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-create-barn:hover {
+    background: #158b64;
+}
+
+/* Nút tạo chuồng luôn hiển thị */
+.btn-create-barn {
+    background: #1a9c73;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap; /* không cho xuống dòng */
+}
+
+.btn-create-barn:hover {
+    background: #158b64;
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* QUAN TRỌNG — căn thẳng cột */
+}
+
+.custom-table th,
+.custom-table td {
+    padding: 14px 12px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid #eee;
+    font-size: 15px;
+}
+
+/* Set width cho từng cột để TRÙNG nhau hoàn toàn */
+.custom-table th:nth-child(1), 
+.custom-table td:nth-child(1) {
+    width: 20%; /* Tên chuồng */
+}
+
+.custom-table th:nth-child(2), 
+.custom-table td:nth-child(2) {
+    width: 15%; /* Diện tích */
+}
+
+.custom-table th:nth-child(3), 
+.custom-table td:nth-child(3) {
+    width: 15%; /* Số lượng */
+}
+
+.custom-table th:nth-child(4), 
+.custom-table td:nth-child(4) {
+    width: 15%; /* Trạng thái */
+}
+
+.custom-table th:nth-child(5), 
+.custom-table td:nth-child(5) {
+    width: 20%; /* Ghi chú / Ngày tạo */
+}
+
+.custom-table th:nth-child(6), 
+.custom-table td:nth-child(6) {
+    width: 5%; /* Action (3 chấm) */
+    text-align: center;
+}
+
+/* CSS Creat new */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.2); /* Nền mờ phía sau */
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+}
+
+/* Header */
+.header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #aaa;
+}
+
+/* Body (Nội dung Form) */
+.form-body {
+    padding: 20px;
+}
+
+/* Bố cục Grid 2 cột */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+/* Định dạng chung cho Input/Select */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.form-group label {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.form-group label .required {
+    color: #e3342f; /* Màu đỏ cho dấu * */
+}
+
+.form-group input, 
+.form-group select,
+.form-group .custom-select-control {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Cần thiết lập cho các trường chiếm hết chiều rộng */
+.full-width {
+    grid-column: 1 / -1; /* Chiếm cả hai cột */
+}
+
+/* Custom style cho Khu nuôi (có nút +) */
+.input-with-icon {
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon input,
+.input-with-icon select {
+    flex-grow: 1;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+}
+
+.input-with-icon button {
+    background-color: #f8fafc;
+    border: 1px solid #ddd;
+    border-left: none;
+    padding: 10px 12px;
+    cursor: pointer;
+    color: #38c172; /* Màu xanh lá cây */
+    font-size: 16px;
+    border-radius: 0 4px 4px 0;
+    line-height: 1;
+}
+
+/* Custom style cho Loại thu hoạch (đa chọn/tag) */
+.harvest-select-control {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px 10px;
+    background-color: white;
+}
+
+.harvest-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #cfebe6; /* Màu xanh nhạt */
+    color: #2c7a7b;
+    padding: 4px 8px;
+    margin-right: 5px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.harvest-tag span {
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.harvest-arrow {
+    margin-left: auto;
+    color: #888;
+}
+
+/* Textarea */
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Footer (Nút Lưu) */
+.footer {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.save-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #02a42b; /* Màu xanh ngọc */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.save-btn i {
+    margin-right: 8px;
+}
+
+.area-row {
+    cursor: pointer;
+}
+
+.area-row .action-cell {
+    cursor: default;
+}
+</style>

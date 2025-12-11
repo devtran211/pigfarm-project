@@ -1,0 +1,874 @@
+<div class="page-title">Medition Warehouse</div>
+
+<!-- FILTER SECTION -->
+<div class="warehouse-filter">
+
+    <div class="filter-group">
+        <label>Name</label>
+        <input type="text" id="search-med-name" placeholder="Searching...">
+    </div>
+
+    <div class="filter-group">
+        <label>Price</label>
+        <div class="filter-input-icon">
+            <input type="text" id="search-med-price" placeholder="Price">
+        </div>
+    </div>
+
+    <div class="filter-group">
+        <label>Inventory</label>
+        <div class="filter-input-icon">
+            <input type="text" id="search-med-inventory" placeholder="Quantity">
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn-farmgo"><span class="plus-icon">+</span> Create invoice </button>
+        <button id="openCreateModal" class="btn-farmgo"><span class="plus-icon">+</span> Create new</button>
+    </div>
+
+</div>
+
+<!-- TABLE -->
+<div class="table-wrapper">
+    <table class="custom-table">
+<thead>
+    <tr>
+        <th>Name</th>
+        <th>Brand</th>
+        <th>Price</th>
+        <th>Inventory</th>
+        <th>Specifications</th>
+        <th></th>
+    </tr>
+</thead>
+
+<tbody>
+    {{#each meditions}}
+    <tr class="medicine-row" data-id="{{this._id}}">
+        <td>
+            <strong>{{this.name}}</strong><br>
+        </td>
+
+        <td>{{this.brand}}</td>
+
+        <td>{{formatMoney this.import_price}}</td>
+
+        <td>{{this.inventory}}</td>
+
+        <td>{{this.capacity}}</td>
+
+        <td class="action-wrapper">
+            <span class="action-more">⋮</span>
+            <div class="action-menu">
+                <button class="btn-edit" data-id="{{this._id}}">Edit</button>
+                <button class="btn-delete" data-id="{{this._id}}">Delete</button>
+            </div>
+        </td>
+    </tr>
+    {{/each}}
+</tbody>
+</table>
+</div>
+
+<div id="createNewMedicine" class="modal-overlay">
+    <div class="modal-content">
+        
+        <div class="header">
+            <h2>Add a new medicine</h2>
+            <button class="close-btn" aria-label="Đóng">&times;</button>
+        </div>
+
+        <div class="form-body">
+            
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label> Name <span class="required">*</span></label>
+                    <input type="text" name="name">
+                </div>  
+
+                <div class="form-group">
+                    <label> Brand <span class="required">*</span></label>
+                    <input type="text" name="brand">
+                </div>  
+
+            <div class="form-group">
+            <label> Medicine type <span class="required">*</span></label>
+                <select name="medicineType">
+                    <option value="Antibiotics">Antibiotics</option>
+                    <option value="Anti-inflammatory">Anti-inflammatory</option>		
+                    <option value="Antiparasitics">Antiparasitics</option>		
+                    <option value="Vaccnines">Vaccnines</option>		
+                    <option value="Antidiarrheals">Antidiarrheals</option>
+                    <option value="Respiratory treatment">Respiratory treatment</option>
+                    <option value="Supplements">Supplements</option>
+                    <option value="Rehydration">Rehydration</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+            <label> Usage type <span class="required">*</span></label>
+                <select name="usageType">
+                    <option value="Mixing feed">Mixing feed</option>
+                    <option value="Mixing water">Mixing water</option>		
+                    <option value="Injection">Injection</option>		
+                    <option value="Drinking directly">Drinking directly</option>		
+                    <option value="Disinfectant spray">Disinfectant spray</option>		
+                </select>
+            </div>
+
+                <div class="form-group">
+                    <label> Unit <span class="required">*</span></label>
+                    <input type="text" name="unit">
+                </div>
+
+                <div class="form-group">
+                    <label> Capacity <span class="required">*</span></label>
+                    <input type="text" name="capacity">
+                </div>
+
+                {{!-- <div class="form-group">
+                    <label> Inventory <span class="required">*</span></label>
+                    <input type="text" name="inventory">
+                </div> --}}
+                
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label> Date of manufacture <span class="required">*</span></label>
+                    <input type="date" name="dateOfManufacture">
+                </div>
+                
+                <div class="form-group">
+                    <label> Expiry <span class="required">*</span></label>
+                    <input type="date" name="expiry">
+                </div>
+            </div>
+
+
+            <div class="form-group full-width">
+                <label>Note</label>
+                <textarea name="note"></textarea>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            <button class="save-btn">
+                <i class="fas fa-save"></i> &#x1F4BE; Save
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<div id="editMedicine" class="modal-overlay">
+    <div class="modal-content">
+        
+        <div class="header">
+            <h2>Edit a medicine</h2>
+            <button class="close-btn" aria-label="Đóng">&times;</button>
+        </div>
+
+        <div class="form-body">
+            
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label> Name <span class="required">*</span></label>
+                    <input type="text" name="name">
+                </div>  
+
+                <div class="form-group">
+                    <label> Brand <span class="required">*</span></label>
+                    <input type="text" name="brand">
+                </div>  
+
+            <div class="form-group">
+            <label> Medicine type <span class="required">*</span></label>
+                <select name="medicineType">
+                    <option value="Antibiotics">Antibiotics</option>
+                    <option value="Anti-inflammatory">Anti-inflammatory</option>		
+                    <option value="Antiparasitics">Antiparasitics</option>		
+                    <option value="Vaccnines">Vaccnines</option>		
+                    <option value="Antidiarrheals">Antidiarrheals</option>
+                    <option value="Respiratory treatment">Respiratory treatment</option>
+                    <option value="Supplements">Supplements</option>
+                    <option value="Rehydration">Rehydration</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+            <label> Usage type <span class="required">*</span></label>
+                <select name="usageType">
+                    <option value="Mixing feed">Mixing feed</option>
+                    <option value="Mixing water">Mixing water</option>		
+                    <option value="Injection">Injection</option>		
+                    <option value="Drinking directly">Drinking directly</option>		
+                    <option value="Disinfectant spray">Disinfectant spray</option>		
+                </select>
+            </div>
+
+                <div class="form-group">
+                    <label> Unit <span class="required">*</span></label>
+                    <input type="text" name="unit">
+                </div>
+
+                <div class="form-group">
+                    <label> Capacity <span class="required">*</span></label>
+                    <input type="text" name="capacity">
+                </div>
+
+                <div class="form-group">
+                    <label> Inventory <span class="required">*</span></label>
+                    <input type="text" name="inventory">
+                </div>
+                
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label> Date of manufacture <span class="required">*</span></label>
+                    <input type="date" name="dateOfManufacture">
+                </div>
+                
+                <div class="form-group">
+                    <label> Expiry <span class="required">*</span></label>
+                    <input type="date" name="expiry">
+                </div>
+            </div>
+
+
+            <div class="form-group full-width">
+                <label>Note</label>
+                <textarea name="note"></textarea>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            <button class="save-btn">
+                <i class="fas fa-save"></i> &#x1F4BE; Save
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<div id="detailMedicine" class="modal-overlay">
+    <div class="modal-content detail-modal">
+
+        <div class="detail-header">
+            <h2><i class="fas fa-pills"></i> Medicine Information</h2>
+            <button class="close-btn">&times;</button>
+        </div>
+
+        <div class="detail-body">
+
+            <div class="detail-grid">
+
+                <div class="detail-card">
+                    <span class="label">Name</span>
+                    <span class="value" id="detail-name"></span>
+                </div>
+
+                <div class="detail-card">
+                    <span class="label">Brand</span>
+                    <span class="value" id="detail-brand"></span>
+                </div>
+
+                <div class="detail-card">
+                    <span class="label">Medicine Type</span>
+                    <span class="value" id="detail-medicinetype"></span>
+                </div>
+
+                <div class="detail-card">
+                    <span class="label">Usage Type</span>
+                    <span class="value" id="detail-usagetype"></span>
+                </div>
+
+                <div class="detail-card">
+                    <span class="label">Unit</span>
+                    <span class="value" id="detail-unit"></span>
+                </div>
+
+                <div class="detail-card">
+                    <span class="label">Capacity</span>
+                    <span class="value" id="detail-capacity"></span>
+                </div>
+
+                <div class="detail-card">
+                    <span class="label">Date of Manufacture</span>
+                    <span class="value" id="detail-dom"></span>
+                </div>
+
+                <div class="detail-card">
+                    <span class="label">Expiry</span>
+                    <span class="value" id="detail-expiry"></span>
+                </div>
+
+            </div>
+
+            <div class="detail-note">
+                <span class="label">Note</span>
+                <p id="detail-note"></p>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script src="/js/medition-warehouse.js"></script>
+
+<style>
+.page-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* SUMMARY */
+.warehouse-summary {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.summary-box {
+    flex: 1;
+    padding: 18px;
+    border-radius: 10px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-box .value {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.summary-box .label {
+    font-size: 14px;
+}
+
+.green { background: #1a9c73; }
+.yellow { background: #F6BE00; }
+.blue { background: #3299ff; }
+.red { background: #E63946; }
+
+/* FILTER */
+.warehouse-filter {
+    display: flex;
+    flex-wrap: wrap;            /* Cho phép xuống dòng */
+    gap: 20px 40px;             /* Khoảng cách giữa các filter */
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+/* Table */
+.warehouse-table th,
+.warehouse-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Vị trí cho cột hành động */
+.action-wrapper {
+    position: relative;
+}
+
+/* Menu ẩn mặc định */
+.action-menu {
+    position: absolute;
+    right: 0;
+    top: 25px;
+
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+
+    width: 130px;
+    padding: 6px 0;
+    display: none;
+
+    z-index: 9999; /* >>> giúp menu luôn nổi trên table */
+}
+
+/* Nút trong menu */
+.action-menu button {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.action-menu button:hover {
+    background: #f5f7fa;
+}
+
+.action-wrapper:hover .action-menu {
+    display: block;
+}
+
+/* ===== VÙNG BỌC BẢNG ===== */
+.table-wrapper {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 10px 18px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    overflow: visible;
+}
+
+/* ===== BẢNG ===== */
+.custom-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: "Inter", sans-serif;
+    font-size: 15px;
+    color: #333;
+}
+
+/* ===== HEADER ===== */
+.custom-table thead tr {
+    background: #f6f8f9;
+}
+
+.custom-table thead th {
+    padding: 14px 16px;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    background: #f6f8f9;
+}
+
+/* ===== BODY ===== */
+.custom-table tbody tr {
+    transition: 0.23s;
+}
+
+.custom-table tbody tr:hover {
+    background: #edf2f7;
+}
+
+.custom-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f2f4;
+}
+
+/* ===== LABEL TRẠNG THÁI ===== */
+.status-label {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-closed {
+    background: #ffe3e3;
+    color: #d64545;
+}
+
+.status-progress {
+    background: #d1f7ef;
+    color: #0a9a7d;
+}
+
+/* ===== CHECKBOX TRONG BẢNG ===== */
+.table-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* ===== ICON SẮP XẾP (↑↓) ===== */
+.sort-icon {
+    font-size: 13px;
+    margin-left: 6px;
+    opacity: 0.6;
+}
+
+/* Căn giữa header */
+.custom-table th {
+    text-align: center !important;
+}
+
+/* Căn giữa dữ liệu */
+.custom-table td {
+    text-align: center !important;
+}
+
+/* ===== CĂN NÚT SANG BÊN PHẢI ===== */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;          /* Đẩy sát sang bên phải */
+    margin-top: 10px;           /* Đẩy xuống dưới filter */
+}
+
+/* Thu nhỏ nút */
+.btn-farmgo {
+    background: #e8f5f1;
+    border: 1px solid #bde3d8;
+    padding: 6px 14px;          /* nhỏ hơn */
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0a8f6a;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-farmgo:hover {
+    background: #d9efe8;
+}
+
+/* Icon + */
+.plus-icon {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* Hover */
+.btn-farmgo:hover {
+    background: #d9efe8;
+    border-color: #a8d7cb;
+}
+
+/* Css Create new */
+
+/* Container của Popup */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.2); /* Nền mờ phía sau */
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+    max-height: 85vh;       /* Chiều cao tối đa của popup */
+    overflow-y: auto;
+}
+
+/* Header */
+.header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #aaa;
+}
+
+/* Body (Nội dung Form) */
+.form-body {
+    padding: 20px;
+}
+
+/* Bố cục Grid 2 cột */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+/* Định dạng chung cho Input/Select */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.form-group label {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.form-group label .required {
+    color: #e3342f; /* Màu đỏ cho dấu * */
+}
+
+.form-group input, 
+.form-group select,
+.form-group .custom-select-control {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Cần thiết lập cho các trường chiếm hết chiều rộng */
+.full-width {
+    grid-column: 1 / -1; /* Chiếm cả hai cột */
+}
+
+/* Custom style cho Khu nuôi (có nút +) */
+.input-with-icon {
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon input,
+.input-with-icon select {
+    flex-grow: 1;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+}
+
+.input-with-icon button {
+    background-color: #f8fafc;
+    border: 1px solid #ddd;
+    border-left: none;
+    padding: 10px 12px;
+    cursor: pointer;
+    color: #38c172; /* Màu xanh lá cây */
+    font-size: 16px;
+    border-radius: 0 4px 4px 0;
+    line-height: 1;
+}
+
+/* Custom style cho Loại thu hoạch (đa chọn/tag) */
+.harvest-select-control {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px 10px;
+    background-color: white;
+}
+
+.harvest-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #cfebe6; /* Màu xanh nhạt */
+    color: #2c7a7b;
+    padding: 4px 8px;
+    margin-right: 5px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.harvest-tag span {
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.harvest-arrow {
+    margin-left: auto;
+    color: #888;
+}
+
+/* Textarea */
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Footer (Nút Lưu) */
+.footer {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.save-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #79c9b1; /* Màu xanh ngọc */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.save-btn i {
+    margin-right: 8px;
+}
+
+/* Overlay */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+/* Popup card */
+.detail-modal {
+    width: 700px;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 0;
+    overflow: hidden;
+    animation: fadeIn 0.25s ease-out;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.detail-header {
+    background: #00be2f;
+    color: #fff;
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-header h2 {
+    font-size: 20px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.detail-header i {
+    font-size: 22px;
+}
+
+.detail-header .close-btn {
+    background: transparent;
+    border: none;
+    font-size: 26px;
+    cursor: pointer;
+    color: white;
+}
+
+/* Body */
+.detail-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* Grid 2 cột */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+
+/* Card item */
+.detail-card {
+    background: #f5f7fa;
+    border: 1px solid #e0e6ee;
+    padding: 12px 14px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-card .label {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.detail-card .value {
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 3px;
+    color: #111827;
+}
+
+/* Note area */
+.detail-note {
+    margin-top: 20px;
+    background: #fff7e6;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 16px;
+    border-radius: 8px;
+}
+
+.detail-note .label {
+    color: #b45309;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.detail-note p {
+    margin: 6px 0 0 0;
+    color: #4b5563;
+    white-space: pre-line;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+</style>

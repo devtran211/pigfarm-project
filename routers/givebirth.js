@@ -4,8 +4,9 @@ var router = express.Router();
 const PigModel = require('../models/Pig');
 const BreedingRecordModel = require('../models/ReproductiveManagement/BreedingRecord');
 const GiveBirthModel = require('../models/ReproductiveManagement/GiveBirthRecord');
+const WeaningModel = require('../models/ReproductiveManagement/Weaning');
 
-router.post("/add", async (req, res) => {
+router.post("/create", async (req, res) => {
   const session = await mongoose.startSession();
   try {
     const {
@@ -13,7 +14,6 @@ router.post("/add", async (req, res) => {
       dateOfBirth,
       totalBorn,
       numberOfLivePiglets,
-      // numberOfDeadPiglets,
       averageWeight,
       note,
     } = req.body;
@@ -46,7 +46,7 @@ router.post("/add", async (req, res) => {
       sow: sowId,
       boar: boarId,
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : new Date(),
-      totalBorn: totalBorn ?? (numberOfLivePiglets + (numberOfDeadPiglets || 0)),
+      totalBorn: totalBorn ?? (numberOfLivePiglets || 0),
       numberOfLivePiglets: numberOfLivePiglets ?? 0,
       numberOfDeadPiglets: totalBorn - numberOfLivePiglets ?? 0,
       averageWeight: averageWeight ?? null,
@@ -81,7 +81,7 @@ router.post("/add", async (req, res) => {
   }
 });
 
-router.put("/edit/:id", async (req, res) => {
+router.post("/edit/:id", async (req, res) => {
   const session = await mongoose.startSession();
   try {
     const id  = req.params.id;
@@ -91,6 +91,7 @@ router.put("/edit/:id", async (req, res) => {
       dateOfBirth,
       totalBorn,
       numberOfLivePiglets,
+      numberOfDeadPiglets,
       averageWeight,
       note,
     } = req.body;
@@ -134,5 +135,51 @@ router.put("/edit/:id", async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
+
+router.get("/:id", async (req, res) => {
+    const id = req.params.id;
+    const giveBirth = await GiveBirthModel.findById(id).lean();
+    return res.json({ giveBirth });
+});
+
+router.delete("/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid giveBirth id" });
+    }
+
+    const giveBirth = await GiveBirthModel.findById(id);
+    if (!giveBirth) {
+      return res.status(404).json({ error: "GiveBirth not found" });
+    }
+
+    // CHECK IF WEANING EXISTS → prevent delete
+    const weaningRecord = await WeaningModel.findOne({ birthRecord: id });
+
+    if (weaningRecord) {
+      return res.status(400).json({
+        error: "Cannot delete GiveBirth because a Weaning record already exists"
+      });
+    }
+
+    // DELETE giveBirth (HARD DELETE)
+    await GiveBirthModel.findByIdAndDelete(id);
+
+    // RESET BreedingRecord.STATUS to Pending
+    await BreedingRecordModel.findByIdAndUpdate(
+      giveBirth.breedingRecord,
+      { status: "Pending" }
+    );
+
+    return res.json({ message: "GiveBirth deleted successfully. BreedingRecord status reset to Pending." });
+
+  } catch (err) {
+    console.error("Error DELETE /api/givebirth/delete/:id", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 
 module.exports = router;

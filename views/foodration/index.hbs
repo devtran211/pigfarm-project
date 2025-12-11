@@ -1,0 +1,1032 @@
+<div class="page-title">Set up food</div>
+
+<div class="warehouse-filter">
+    
+    <div class="warehouse-filter">
+        <div class="filter-group">
+            <select id="filterAreaSelect">
+            <option value="">Breeding area...</option>
+            {{#each areas}}
+                <option value="{{this._id}}" {{#ifCond ../selectedAreaId this._id}}selected{{/ifCond}}>{{this.name}}</option>
+            {{/each}}
+            </select>
+        </div>
+    </div>
+
+    {{!-- <div class="filter-group">
+        <label>Price</label>
+        <div class="filter-input-icon">
+            <input type="text" placeholder="Giá tiền">
+            <span class="filter-icon">⚲</span>
+        </div>
+    </div> --}}
+</div>
+
+{{#each areaData}}
+
+<div class="area-block" data-area-id="{{this._id}}">
+
+    <div class="area-header">    
+        <h2 class="area-title">{{this.name}}</h2>
+
+        <div class="meal-header">
+            <button class="btn-add-meal-area">
+                <span class="icon">＋</span> Create
+            </button>
+        </div>
+    </div>
+
+    {{#each this.barns}}
+
+    <div class="barn-card" data-barn-id="{{this._id}}">
+
+        <div class="barn-header">
+            <strong>{{this.name}}</strong>
+        </div>
+
+        <div class="meal-header">
+            <button class="btn-add-meal-barn">
+                <span class="icon">＋</span> Create
+            </button>
+        </div>
+
+        <div class="farmgo-card">
+            <table class="farmgo-table">
+            <thead>
+                <tr>
+                    <th>Ration name</th>
+                    <th>Numb of meals/ day</th>
+                    <th>Start date</th>
+                    <th>End date</th>
+                    <th>Total (Kg)</th>
+                    <th class="header-empty"></th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {{#if this.rations.length}}
+
+                    {{#each this.rations}}
+                        <tr>
+                            <td>{{this.name}}</td>
+                            <td>{{this.number_of_feedings_per_day}}</td>
+                            <td>{{formatDate this.start_time}}</td>
+                            <td>{{formatDate this.end_time}}</td>
+                            <td>{{this.total}}</td>  
+                            <td class="action-wrapper">
+                            <span class="action-more">⋮</span>
+                                <div class="action-menu">
+                                    <button class="btn-detail" data-id="{{this._id}}">Detail</button>
+                                    <button class="btn-edit" data-id="{{this._id}}">Edit</button>
+                                    <button class="btn-delete" data-id="{{this._id}}">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    {{/each}}
+
+                {{else}}
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:#888;">
+                            No food rations yet
+                        </td>
+                        <td></td>
+                    </tr>
+                {{/if}}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {{/each}}
+</div>
+{{/each}}
+
+<div id="createRationModal" class="modal-overlay">
+
+    <div class="ration-form-container">
+        
+        <div class="form-header">
+            <h2>Create ration</h2>
+            <button class="close-button">&times;</button>
+        </div>
+
+        <div class="modal-content-wrapper">
+            
+            <div class="form-section">
+                <label for="ration-name">Ration name <span class="required">*</span></label>
+                <input type="text" name="name" id="ration-name">
+            </div>
+
+            <div class="form-section date-group">
+                <div class="date-input-group">
+                    <label for="start-date">Start date <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                        <input type="date" name="start_date" id="start-date" placeholder="mm/dd/yyyy">
+                    </div>
+                </div>
+
+                <div class="date-input-group">
+                    <label for="end-date">End date <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                        <input type="date" name="end_time" id="end-date" placeholder="mm/dd/yyyy">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <label for="meals-per-day">Number of meals per day <span class="required">*</span></label>
+                <input type="text" name="number_of_feedings_per_day" id="meals-per-day">
+            </div>
+
+            <hr>
+
+            <div class="form-group food-used-section">
+                <h3>Food used</h3>
+                <div id="food-items-container"> 
+                    <div class="item-row food-row">
+                        <input type="text" name="meal[]" class="meal-select">
+                        
+                        <select name="food_warehouse[]">
+                            <option value="">Loading...</option>
+                        </select>
+                        <input type="text" name="weight[]" placeholder="Weight">
+                        <select name="weight_unit[]" class="unit-select">
+                            <option>kg</option>
+                            <option>g</option>
+                        </select>
+                        <button type="button" class="remove-button">&minus;</button>
+                    </div>
+                </div>
+                <button type="button" class="add-button" id="add-food-button">+ Add</button>
+            </div>
+
+            <hr>
+
+            <div class="form-group add-supplements-section">
+                <h3>Add supplements</h3>
+                <div id="supplement-items-container"> 
+                    <div class="item-row supplement-row">
+                        <input type="text" name="meal[]" class="meal-select">
+            
+                        <select name="medition_warehouse[]" class="med-select">
+                            <option value="">Loading...</option>
+                        </select>
+                        <input type="text" name="dosage[]" placeholder="Dosage">
+                        <select name="dosage_unit[]" class="unit-select">
+                            <option>g</option>
+                            <option>l</option>
+                            <option>ml</option>
+                        </select>
+                        <button type="button" class="remove-button">&minus;</button>
+                    </div>
+                </div>
+                <button type="button" class="add-button" id="add-supplement-button">+ Add</button>
+            </div>
+
+            <hr>
+
+            <div class="form-section note-section">
+                <label for="ration-notes">Notes</label>
+                <textarea id="ration-notes" placeholder="Enter any specific instructions or notes for this ration..."></textarea>
+            </div>
+
+        </div> <div class="form-footer">
+            <button class="save-button" type="button">Save</button>
+        </div>
+    </div>
+</div>
+
+<div id="editRationModal" class="modal-overlay">
+
+    <div class="ration-form-container">
+        
+        <div class="form-header">
+            <h2>Create ration</h2>
+            <button class="close-button">&times;</button>
+        </div>
+
+        <div class="modal-content-wrapper">
+            
+            <div class="form-section">
+                <label for="ration-name">Ration name <span class="required">*</span></label>
+                <input type="text" name="name" id="ration-name">
+            </div>
+
+            <div class="form-section date-group">
+                <div class="date-input-group">
+                    <label for="start-date">Start date <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                        <input type="date" name="start_date" id="start-date" placeholder="mm/dd/yyyy">
+                    </div>
+                </div>
+
+                <div class="date-input-group">
+                    <label for="end-date">End date <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                        <input type="date" name="end_time" id="end-date" placeholder="mm/dd/yyyy">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <label for="meals-per-day">Number of meals per day <span class="required">*</span></label>
+                <input type="text" name="number_of_feedings_per_day" id="meals-per-day">
+            </div>
+
+            <hr>
+
+            <div class="form-group food-used-section">
+                <h3>Food used</h3>
+                <div id="food-items-container"> 
+                    <div class="item-row food-row">
+                        <input type="text" name="meal[]" class="meal-select">
+                        
+                        <select name="food_warehouse[]">
+                            <option value="">Loading...</option>
+                        </select>
+                        <input type="text" name="weight[]" placeholder="Weight">
+                        <select name="weight_unit[]" class="unit-select">
+                            <option>kg</option>
+                            <option>g</option>
+                        </select>
+                        <button type="button" class="remove-button">&minus;</button>
+                    </div>
+                </div>
+                <button type="button" class="add-button" id="edit-add-food-button">+ Add</button>
+            </div>
+
+            <hr>
+
+            <div class="form-group add-supplements-section">
+                <h3>Add supplements</h3>
+                <div id="supplement-items-container"> 
+                    <div class="item-row supplement-row">
+                        <input type="text" name="meal[]" class="meal-select">
+            
+                        <select name="medition_warehouse[]" class="med-select">
+                            <option value="">Loading...</option>
+                        </select>
+                        <input type="text" name="dosage[]" placeholder="Dosage">
+                        <select name="dosage_unit[]" class="unit-select">
+                            <option>g</option>
+                            <option>l</option>
+                            <option>ml</option>
+                        </select>
+                        <button type="button" class="remove-button">&minus;</button>
+                    </div>
+                </div>
+                <button type="button" class="add-button" id="edit-add-supplement-button">+ Add</button>
+            </div>
+
+            <hr>
+
+            <div class="form-section note-section">
+                <label for="ration-notes">Notes</label>
+                <textarea id="ration-notes" placeholder="Enter any specific instructions or notes for this ration..."></textarea>
+            </div>
+
+        </div> <div class="form-footer">
+            <button class="save-button" type="button">Save</button>
+        </div>
+    </div>
+</div>
+
+<div id="detailRationModal" class="modal-overlay detail-modal">
+
+    <div class="detail-card">
+        
+        <div class="detail-header">
+            <h2><i class="fas fa-info-circle"></i> Ration Details</h2>
+            <button class="detail-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="detail-content">
+
+            <section class="detail-section">
+                <h3>General Information</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="label">Name:</span>
+                        <span id="detail-name" class="value"></span>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="label">Barns applied:</span>
+                        <span id="detail-barns" class="value"></span>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="label">Start date:</span>
+                        <span id="detail-start" class="value"></span>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="label">End date:</span>
+                        <span id="detail-end" class="value"></span>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="label">Meals/day:</span>
+                        <span id="detail-meals" class="value"></span>
+                    </div>
+
+                    
+                </div>
+            </section>
+
+            <section class="detail-section">
+                <h3>Foods Used</h3>
+                <div id="detail-food-list" class="detail-list"></div>
+            </section>
+
+            <section class="detail-section">
+                <h3>Supplements</h3>
+                <div id="detail-med-list" class="detail-list"></div>
+            </section>
+
+        </div>
+    </div>
+</div>
+
+
+<script src="/js/food-ration.js"></script>
+
+<style>
+.page-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.area-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;   /* giúp chữ A và nút Create nằm ngang thẳng hàng */
+    margin-bottom: 10px;
+}
+
+.area-title {
+    margin: 0; /* tránh bị lệch do margin mặc định */
+}
+
+.barn-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    margin-bottom: 25px;
+}
+
+.barn-header {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.ration-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ration-table th,
+.ration-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+.ration-table th {
+    background: #f7f9fc;
+    font-weight: 600;
+}
+
+/* FILTER */
+.warehouse-filter {
+    display: flex;
+    flex-wrap: wrap;            /* Cho phép xuống dòng */
+    gap: 20px 40px;             /* Khoảng cách giữa các filter */
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+/* =========== FARMGO CARD WRAPPER ============= */
+.farmgo-card {
+    background: #fff;
+    padding: 0;
+    border-radius: 14px;
+    box-shadow: 0px 2px 10px rgba(0,0,0,0.06);
+    margin-top: 20px;
+    overflow-x: auto;
+    overflow-y: visible !important;
+    overflow: visible;
+    border: 1px solid #eef1f4;
+}
+
+/* =========== TABLE STYLE ============= */
+.farmgo-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+/* HEADER */
+.farmgo-table thead tr {
+    background: #f6f9fc;
+}
+
+.farmgo-table th {
+    padding: 14px 20px;
+    font-weight: 600;
+    text-align: center;
+    color: #2f3a4a;
+    border-bottom: 1px solid #e4e8ec;
+    font-size: 15px;
+}
+
+/* DÒNG DỮ LIỆU */
+.farmgo-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f3f5;
+    vertical-align: middle;
+    color: #444;
+    background: #fff;
+}
+
+/* CỘT ĐẦU TIÊN CĂN TRÁI (giống FarmGo) */
+.farmgo-table td:first-child {
+    text-align: center;
+    font-weight: 500;
+}
+
+/* CÁC CỘT KHÁC CĂN GIỮA */
+.farmgo-table td:not(:first-child) {
+    text-align: center;
+}
+
+/* DÒNG CUỐI KHÔNG CÓ BORDER */
+.farmgo-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.meal-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.btn-add-meal-area,
+.btn-add-meal-barn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #f0fdf4;  /* xanh nhạt */
+    border: 1px solid #22c55e;  /* xanh lá */
+    color: #22c55e;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-add-meal .icon {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.btn-add-meal:hover {
+    background: #dcfce7;  /* xanh đậm hơn */
+}
+
+/* Overlay */
+.detail-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    animation: fadeIn 0.25s ease-out;
+}
+
+.detail-modal.active {
+    display: flex;
+}
+
+/* Card */
+.detail-card {
+    width: 700px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    animation: slideUp 0.3s ease-out;
+}
+
+/* Header */
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #f1f1f1;
+    padding-bottom: 12px;
+}
+
+.detail-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.detail-close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    color: #444;
+    transition: 0.2s;
+}
+
+.detail-close-btn:hover {
+    color: #d9534f;
+}
+
+/* Content */
+.detail-content {
+    padding-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.detail-section h3 {
+    margin-bottom: 10px;
+    font-size: 17px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* 2-column layout */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    row-gap: 12px;
+    column-gap: 15px;
+}
+
+/* Label + Value */
+.detail-item .label {
+    color: #666;
+    font-weight: 500;
+}
+
+.detail-item .value {
+    color: #222;
+    font-weight: 600;
+}
+
+/* List styling */
+.detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.detail-list .detail-item-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    border: 1px solid #eee;
+}
+
+.detail-list .meal {
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.detail-list .dash {
+    color: #aaa;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Css create new */
+/* Lớp che phủ nền (overlay) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Nền đen mờ 50% */
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Đảm bảo modal nằm trên các thành phần khác */
+}
+
+.modal-overlay.active {
+    display: flex; /* hoặc block */
+}
+
+/* Container chính của form (nằm trong overlay) */
+.ration-form-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2); /* Shadow đậm hơn cho popup */
+    width: 90%;
+    max-width: 800px;
+    /* Thay đổi: Bỏ padding cứng và dùng flex cho bố cục */
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh; /* Giới hạn chiều cao popup */
+    overflow: hidden; /* Quan trọng để cuộn nội dung */
+}
+
+/* Phần nội dung có thể cuộn (NEW) */
+.modal-content-wrapper {
+    padding: 30px 30px 10px; /* Padding trên/dưới/trái/phải */
+    overflow-y: auto; /* Cho phép cuộn khi nội dung dài */
+    flex-grow: 1; /* Cho phép mở rộng */
+}
+
+
+/* ========================================================================= */
+/* CÁC THIẾT LẬP STYLE CỦA FORM (GIỮ NGUYÊN HOẶC CHỈNH SỬA NHẸ) */
+/* ========================================================================= */
+
+/* Tiêu đề và nút đóng */
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* margin-bottom: 30px; */ /* Bỏ margin-bottom, thay bằng padding của content wrapper */
+    border-bottom: 1px solid #eee;
+    padding: 20px 30px 15px; /* Padding tiêu đề */
+    flex-shrink: 0; /* Không co lại khi cuộn */
+}
+
+.form-header h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin: 0;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 2em;
+    cursor: pointer;
+    color: #888;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.close-button:hover {
+    color: #333;
+}
+
+/* Các phần tử Form chung */
+.form-section {
+    margin-bottom: 20px;
+}
+
+.form-section label,
+.form-group h3 {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.required {
+    color: #ff0000;
+}
+
+input[type="date"],
+input[type="text"],
+.item-row select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1em;
+    height: 42px; /* Chiều cao thống nhất cho input và select */
+}
+
+#ration-name,
+#meals-per-day {
+    max-width: 350px;
+    width: 100%;
+}
+
+/* Nhóm ngày tháng */
+.date-group {
+    display: flex;
+    gap: 20px;
+}
+
+.date-input-group {
+    flex: 1;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon input {
+    padding-right: 40px;
+}
+
+.date-icon {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 20px;
+    pointer-events: none;
+}
+
+/* Đường kẻ phân chia */
+hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 30px 0;
+}
+
+/* Phần Food used và Add supplements */
+.form-group h3 {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+}
+
+.item-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+/* Điều chỉnh chiều rộng các cột trong item-row */
+.item-row .meal-select {
+        flex: 1.5; /* Bữa ăn */
+}
+.food-row select:nth-child(2),
+.supplement-row select:nth-child(2) {
+    flex: 3; /* Select food/med */
+}
+.item-row input[type="text"] {
+    flex: 1; /* Weight/Dosage */
+    min-width: 80px;
+}
+
+.unit-select {
+    flex: 0 0 80px;
+}
+
+.remove-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 1.5em;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 3px;
+    flex-shrink: 0; /* Không co lại */
+}
+
+.add-button {
+    background: none;
+    color: #28a745;
+    border: 1px solid #28a745;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.add-button:hover {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Footer và nút Save */
+.form-footer {
+    /* Các giá trị -30px được loại bỏ và thay bằng padding mới */
+    padding: 20px 30px;
+    text-align: right;
+    border-top: 1px solid #eee;
+    background-color: #f9f9f9;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    flex-shrink: 0; /* Không co lại khi cuộn */
+}
+
+.save-button {
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 4px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%; /* Giữ nguyên 100% để hiển thị đẹp hơn trong popup */
+    max-width: 200px; /* Giới hạn chiều rộng cho nút Save */
+}
+
+.save-button:hover {
+    background-color: #4cae4c;
+}
+
+/* ========================================================================= */
+/* RESPONSIVE (Cho màn hình nhỏ hơn) */
+/* ========================================================================= */
+
+@media (max-width: 768px) {
+    .ration-form-container {
+        max-width: 95%; /* Mở rộng hơn trên di động */
+    }
+
+    .date-group {
+        flex-direction: column; /* Xếp chồng ngày bắt đầu và ngày kết thúc */
+        gap: 15px;
+    }
+    
+    .item-row {
+        flex-wrap: wrap; /* Cho phép các mục xuống dòng */
+        gap: 8px;
+    }
+
+    .item-row select,
+    .item-row input[type="text"] {
+        flex: 1 1 calc(50% - 4px); /* Chia đôi chiều rộng cho các ô */
+        min-width: unset;
+    }
+    
+    .item-row .meal-select {
+        flex: 1 1 100%; /* Meal select chiếm toàn bộ chiều rộng */
+    }
+
+    .unit-select {
+        flex: 1 1 calc(50% - 40px); /* Đảm bảo unit và remove button vẫn ổn */
+    }
+
+    .item-row input[placeholder="Weight"],
+    .item-row input[placeholder="Dosage"] {
+        flex: 1 1 calc(50% - 4px);
+    }
+
+    .remove-button {
+        flex-shrink: 0;
+    }
+    
+    .form-header, .form-footer, .modal-content-wrapper {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .form-footer {
+        text-align: center; /* Nút Save căn giữa trên di động */
+    }
+
+    .save-button {
+        max-width: 100%; /* Nút Save full width trên di động */
+    }
+}
+
+textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1em;
+    resize: vertical; /* Chỉ cho phép kéo dãn chiều dọc */
+    min-height: 100px; /* Chiều cao tối thiểu */
+}
+
+/* ===== NÚT 3 CHẤM ===== */
+.action-wrapper {
+    position: relative;
+    text-align: center;
+}
+
+/* Icon 3 chấm */
+.action-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 20px;
+    color: #4b5563;              /* Text xám đẹp */
+    transition: all 0.25s ease;
+    background: transparent;
+}
+
+/* Hiệu ứng hover */
+.action-more:hover {
+    background: #f1f5f9;         /* Xám nhạt tinh tế */
+    color: #1f2937;              /* Đậm hơn khi hover */
+    transform: scale(1.05);      /* Phóng nhẹ */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+/* ===== MENU DROPDOWN ===== */
+.action-menu {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    padding: 8px 0;
+    display: none;                /* Toggle bằng JS */
+    min-width: 140px;
+    z-index: 9999;
+    border: 1px solid #e5e7eb;
+    animation: dropdownFade 0.18s ease-out;
+}
+
+/* Nút trong menu */
+.action-menu button {
+    width: 100%;
+    padding: 10px 15px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-size: 14px;
+    color: #374151;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+/* Hover menu item */
+.action-menu button:hover {
+    background-color: #f3f4f6;
+    color: #111827;
+}
+
+/* Animation đẹp khi hiện menu */
+@keyframes dropdownFade {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+</style>
+

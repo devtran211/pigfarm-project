@@ -1,96 +1,52 @@
 var express = require('express');
 var router = express.Router();
 const BarnModel = require('../models/Barn');
-const BreedingAreaModel = require('../models/BreedingArea');
+const AreaModel = require('../models/Area');
 const DrugUseModel = require('../models/DrugUse');
 const DrugUseDetailModel = require('../models/DrugUseDetail');
 const { createDrugUse, editDrugUse, deleteDrugUse } = require('../services/drugUseService');
 
 router.get("/", async (req, res) => {
-  try {
-    // Lấy tất cả khu nuôi
-    const areas = await BreedingAreaModel.find().lean();
-    console.log(areas);
+    try {
+        const selectedAreaId = req.query.area || "";
 
-    const result = [];
+        // 1. Lấy tất cả khu
+        const areas = await AreaModel.find().lean();
 
-    for (const area of areas) {
-      // Lấy tất cả chuồng thuộc khu
-      const barns = await BarnModel.find({ breedingarea: area._id }).lean();
+        // 2. Query barn & drug use theo từng area → y hệt food ration
+        const areaData = [];
 
-      console.log(barns);
+        for (const area of areas) {
+            // Nếu có filter → chỉ lấy area được chọn
+            if (selectedAreaId && selectedAreaId !== area._id.toString()) continue;
 
-      // Tổng hợp cho toàn khu
-      const areaDrugSummary = new Map();
+            const barns = await BarnModel.find({ area: area._id }).lean();
 
-      const barnData = [];
+            // Gắn drug use vào từng barn
+            for (let barn of barns) {
+                const drugUses = await DrugUseModel.find({ barn: barn._id })
+                    .lean();
 
-      for (const barn of barns) {
-        // Lấy tất cả chế độ sử dụng thuốc của chuồng này
-        const drugUses = await DrugUseModel.find({ barn: barn._id }).lean();
+                barn.rations = drugUses; // giống với FoodRation: this.rations
+            }
 
-        // Gom tất cả detail của những drug_use này
-        const drugUseIds = drugUses.map(d => d._id);
-        const drugDetails = await DrugUseDetailModel.find({ drug_use: { $in: drugUseIds } })
-          .populate("medition_warehouse")
-          .lean();
-
-        // Gom theo cữ (time)
-        const timeMap = new Map();
-
-        for (const detail of drugDetails) {
-          const time = detail.time || "Không rõ cữ";
-          const med = detail.medition_warehouse;
-
-          if (!med) continue;
-
-          const drugItem = {
-            name: med.name,
-            quantity: `${detail.dosage}${detail.dosage_unit || ""}`
-          };
-
-          if (!timeMap.has(time)) {
-            timeMap.set(time, [drugItem]);
-          } else {
-            timeMap.get(time).push(drugItem);
-          }
-
-          // Tổng hợp thuốc toàn khu
-          const key = med.name;
-          const existing = areaDrugSummary.get(key) || 0;
-          areaDrugSummary.set(key, existing + detail.dosage);
+            areaData.push({
+                ...area,
+                barns: barns
+            });
         }
 
-        // Convert Map -> array
-        const times = Array.from(timeMap.entries()).map(([time, drugs]) => ({
-          time,
-          drugs
-        }));
-
-        barnData.push({
-          barnName: barn.name,
-          times
+        return res.render("druguse/index", {
+            title: "Medication regimen",
+            active: "druguse",
+            areas,
+            selectedAreaId,
+            areaData
         });
-      }
-
-      // Format tổng hợp khu
-      const summary = {};
-      for (const [drugName, totalDosage] of areaDrugSummary.entries()) {
-        summary[drugName] = `${totalDosage} ml`;
-      }
-
-      result.push({
-        areaName: area.name,
-        summary,
-        barns: barnData
-      });
+    } catch (err) {
+        console.error("Drug Use Load Error:", err);
+        res.status(500).send("Server error");
     }
-
-    return res.status(200).json(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Lỗi khi lấy dữ liệu sử dụng thuốc", error: error.message });
-  }
 });
 
 router.post("/add", async (req, res) => {
@@ -106,6 +62,41 @@ router.post("/add", async (req, res) => {
       message: "Thiết lập sử dụng thuốc thất bại!",
       error: error.message
     });
+  }
+});
+
+router.get("/detail/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    const drugUse = await DrugUseModel.findById(id)
+      .populate("barn") // populate nếu cần
+      .lean();
+
+    if (!drugUse) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy drug use" });
+    }
+
+    // Lấy thêm chi tiết
+    const details = await DrugUseDetailModel.find({ drug_use: id })
+    .populate("medition_warehouse")
+    .lean();
+
+    details.forEach(d => {
+        d.medition_warehouse_name = d.medition_warehouse?.name || "";
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...drugUse,
+        details
+      }
+    });
+
+  } catch (err) {
+    console.error("GET EDIT ERROR:", err);
+    return res.status(500).json({ success: false, message: "Lỗi server" });
   }
 });
 
@@ -130,7 +121,7 @@ router.put("/edit/:id", async (req, res) => {
   }
 });
 
-// Xóa 1 dòng cụ thể
+// Delete specify drug use
 router.delete("/delete/:id", async (req, res) => {
   try{
     await deleteDrugUse({ drugUseId: req.params.id });
@@ -149,5 +140,6 @@ router.delete("/delete/by-area/:areaId", async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 });
+
 
 module.exports = router;

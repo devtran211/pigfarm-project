@@ -1,0 +1,329 @@
+<div class="left-section">
+    <div class="slogan">We are here to help farmers.</div>
+    {{!-- <img src="/public/img/signin-pic.jpg" alt="Farm products" class="slogan-image"> --}}
+    <div class="illustration-wrapper">
+        <div class="illustration"></div>
+    </div>
+</div>
+
+<div class="right-section">
+    <div class="form-header">
+        <h2>Sign up to PigGo</h2>
+        <p>Already a member? <a href="/auth/login">Log in</a></p>
+    </div>
+
+    <form action="/auth/register" method="POST">
+
+        <div class="form-group">
+            <label for="name">Your name</label>
+            <div class="input-wrapper">
+                <input type="text" id="name" name="name" placeholder="Your full name">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="email">E-mail</label>
+            <div class="input-wrapper">
+                <input type="email" id="email" name="email" placeholder="name@mail.com">
+                <span class="input-suffix">@</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrapper">
+                <input type="password" id="password" name="password" placeholder="6+ characters, +1 capital letter">
+            </div>
+            <div class="password-info">
+                Password must have at least 8 characters and 1 uppercase letter <span class="icon">&#9;</span>
+            </div>
+        </div>
+
+        <button class="button-primary" type="submit">create an account</button>
+    </form>
+
+    <div class="recaptcha-info">
+        This site is protected by reCAPTCHA and the google <br>
+        <a href="#">Privacy Policy</a> and <a href="#">Terms of Service</a> apply.
+    </div>
+</div>
+
+{{#if errors}}
+<script>
+    let messages = "";
+    {{#each errors}}
+        messages += "- {{this.msg}} \n";
+    {{/each}}
+    alert(messages);
+</script>
+{{/if}}
+
+<style>
+/* Base Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f7f9fb; /* Light grey background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; /* Full viewport height */
+    color: #333;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    max-width: 1100px; /* Adjust max width as in image */
+    background-color: white;
+    border-radius: 12px;
+    overflow: hidden; /* Ensures image corners are rounded */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    min-height: 700px; /* Minimum height for the form */
+}
+
+/* Left Section - Image and Slogan */
+.left-section {
+    flex: 1; /* Takes up 1 part of space */
+    background-color: #f0f8f0; /* Light green background for illustration */
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden; /* To contain the absolute positioned drones */
+}
+
+.left-section .slogan {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 30px;
+    max-width: 300px; /* Limit slogan width */
+    line-height: 1.3;
+}
+
+.illustration-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 400px; /* Max width for the illustration */
+    height: 300px; /* Fixed height for illustration area */
+    margin-top: 20px;
+}
+
+/* Using an image as background for the illustration */
+.illustration {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://via.placeholder.com/400x300/e0ffe0/888888?text=Farm+Illustration'); /* Placeholder image */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center bottom;
+}
+
+/* Right Section - Sign Up Form */
+.right-section {
+    flex: 1; /* Takes up 1 part of space */
+    padding: 40px 60px; /* More padding on the sides */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center content vertically */
+    position: relative;
+}
+
+.language-selector {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 13px;
+    color: #777;
+}
+
+.language-selector select {
+    border: none;
+    background: none;
+    font-size: 13px;
+    color: #777;
+    padding: 5px;
+    cursor: pointer;
+}
+
+.form-header {
+    margin-bottom: 30px;
+}
+
+.form-header h2 {
+    font-size: 32px;
+    font-weight: bold;
+    color: #222;
+    margin-bottom: 10px;
+}
+
+.form-header p {
+    font-size: 14px;
+    color: #555;
+}
+
+.form-header a {
+    color: #6a60e3; /* Purple link color */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: 12px 15px;
+    padding-right: 45px; /* Space for icon/suffix */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+.input-wrapper input:focus {
+    border-color: #6a60e3;
+    outline: none;
+}
+
+.input-suffix {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+    font-size: 16px;
+}
+
+.password-info {
+    font-size: 13px;
+    color: #777;
+    margin-top: 5px;
+}
+
+.password-info .icon {
+    margin-left: 5px;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.button-primary {
+    width: 100%;
+    padding: 14px 20px;
+    background-color: #28a745; /* Green button */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.3s;
+}
+
+.button-primary:hover {
+    background-color: #218838;
+}
+
+.button-google {
+    width: 100%;
+    padding: 12px 20px;
+    background-color: white;
+    color: #555;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: border-color 0.3s, background-color 0.3s;
+}
+
+.button-google:hover {
+    border-color: #aaa;
+    background-color: #f0f0f0;
+}
+
+.button-google img {
+    width: 20px;
+    height: 20px;
+}
+
+.recaptcha-info {
+    font-size: 12px;
+    color: #777;
+    margin-top: 30px;
+    text-align: center;
+}
+
+.recaptcha-info a {
+    color: #6a60e3;
+    text-decoration: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+    .container {
+        flex-direction: column;
+        min-height: auto;
+    }
+    .left-section {
+        padding: 30px;
+        order: 2; /* Puts image section below form on small screens */
+    }
+    .right-section {
+        padding: 40px 30px;
+        order: 1; /* Puts form section above image on small screens */
+    }
+    .illustration-wrapper {
+        height: 200px; /* Smaller illustration on small screens */
+    }
+    .slogan {
+        font-size: 20px;
+        margin-bottom: 20px;
+    }
+    .form-header h2 {
+        font-size: 28px;
+    }
+    .language-selector {
+        top: 15px;
+        right: 15px;
+    }
+}
+
+@media (max-width: 500px) {
+    .container {
+        margin: 20px;
+    }
+    .right-section {
+        padding: 30px 20px;
+    }
+}
+
+</style>

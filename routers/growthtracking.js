@@ -1,27 +1,75 @@
 const express = require('express');
 const router = express.Router();
+const BarnModel = require('../models/Barn');
 const PigModel = require('../models/Pig');
 const GrowthTrackingModel = require('../models/GrowthTracking');
 const RationFoodDetailModel = require('../models/RationFoodDetail');
 const FoodRationModel = require('../models/FoodRation');
-const { createPigs } = require('../services/pig');
 
-router.post('/create-pigs', createPigs);
+// Lấy danh sách chuồng hiện tại có pigs
+router.get('/barns', async (req,res) => {
+    try {
+    // 1️⃣ Lấy tất cả các lợn đã được gán chuồng
+    const pigs = await PigModel.find({ barn: { $ne: null } }).select("barn").lean();
+
+    if (!pigs.length) {
+      return res.status(404).json({ message: "No pigs with assigned barns found" });
+    }
+
+    // 2️⃣ Lấy danh sách các ID chuồng duy nhất
+    const barnIds = [...new Set(pigs.map((p) => p.barn.toString()))];
+
+    // 3️⃣ Lấy thông tin chi tiết của các chuồng này
+    const barns = await BarnModel.find({ _id: { $in: barnIds } })
+      .populate("breedingarea", "name")
+      .lean();
+
+    res.status(200).json({
+      message: "List of barns that currently contain pigs",
+      totalBarns: barns.length,
+      barns,
+    });
+  } catch (error) {
+    console.error("Error in getBarnsWithPigs:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Lấy danh sách lợn trong một chuồng cụ thể
+router.get('/:barnId/pigs', async (req,res) => {
+  try {
+    const { barnId } = req.params;
+
+    const pigs = await PigModel.find({ barn: barnId }).lean();
+
+    if (!pigs.length) {
+      return res.status(404).json({ message: "No pigs found in this barn" });
+    }
+
+    res.status(200).json({
+      message: "List of pigs in the selected barn",
+      pigs,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
 router.post('/create', async(req,res) => {
 try {
     const { pig, dateOfImplementation, age, weight, length, note } = req.body;
 
-    // 🐷 Lấy thông tin lợn (để biết nó đang ở chuồng nào)
+    // Lấy thông tin lợn (để biết nó đang ở chuồng nào)
     const pigData = await PigModel.findById(pig).populate("barn");
     if (!pigData) return res.status(404).json({ message: "Pig not found" });
 
-    // 📈 Lấy bản ghi tăng trưởng gần nhất
+    // Lấy bản ghi tăng trưởng gần nhất
     const lastGrowth = await GrowthTrackingModel.findOne({ pig }).sort({
       dateOfImplementation: -1,
     });
 
-    // 🍽️ Lấy chế độ ăn gần nhất của chuồng (lưu ý: barn là mảng, và dùng start_time)
+    // Lấy chế độ ăn gần nhất của chuồng (lưu ý: barn là mảng, và dùng start_time)
     const latestRation = await FoodRationModel.findOne({
       barn: { $in: [pigData.barn._id] },
       start_time: { $lte: new Date(dateOfImplementation) },
@@ -39,12 +87,12 @@ try {
       });
     }
 
-    // 🧾 Lấy chi tiết thức ăn thuộc khẩu phần này
+    // Lấy chi tiết thức ăn thuộc khẩu phần này
     const rationDetails = await RationFoodDetailModel.find({
       food_ration: latestRation._id,
     });
 
-    // 🧮 Tính tổng lượng ăn/ngày
+    // Tính tổng lượng ăn/ngày
     const totalPerDay = rationDetails.reduce(
       (sum, item) =>
         sum + (item.weight || 0) * (latestRation.number_of_feedings_per_day || 0),
@@ -63,14 +111,14 @@ try {
 
     const feedIntake = totalPerDay * dayDiff;
 
-    // 🧠 Tính FCR nếu có dữ liệu trước
+    // Tính FCR nếu có dữ liệu trước
     let fcr = null;
     if (lastGrowth && feedIntake > 0) {
       const weightGain = weight - lastGrowth.weight;
       fcr = weightGain > 0 ? feedIntake / weightGain : null;
     }
 
-    // 💾 Lưu bản ghi tăng trưởng mới
+    // Lưu bản ghi tăng trưởng mới
     const growth = new GrowthTrackingModel({
       pig,
       dateOfImplementation,
@@ -109,13 +157,13 @@ try {
     note
     } = req.body;
 
-    // 1️⃣ Kiểm tra bản ghi có tồn tại không
+    // Kiểm tra bản ghi có tồn tại không
     const growth = await GrowthTrackingModel.findById(id);
     if (!growth) {
     return res.status(404).json({ message: "GrowthTracking record not found" });
     }
 
-    // 2️⃣ Nếu có thay đổi cân nặng hoặc ngày thực hiện → tính lại FCR
+    // Nếu có thay đổi cân nặng hoặc ngày thực hiện → tính lại FCR
     let fcr = growth.fcr; // giữ nguyên nếu không cần tính lại
     if (weight || dateOfImplementation) {
     const pigData = await PigModel.findById(pig || growth.pig).populate("barn");
@@ -163,7 +211,7 @@ try {
     }
     }
 
-    // 3️⃣ Cập nhật dữ liệu
+    // Cập nhật dữ liệu
     const updated = await GrowthTrackingModel.findByIdAndUpdate(
     id,
     {

@@ -20,5 +20,4 @@ const FoodWareHouseSchema = new mongoose.Schema({
 });
 
 const FoodWareHouseModel = mongoose.models.food_warehouses || mongoose.model('food_warehouses', FoodWareHouseSchema);
-
 module.exports = FoodWareHouseModel;

@@ -11,7 +11,7 @@ const WeaningSchema = mongoose.Schema({
     pigletHealth: String,
     avgWeaningWeightKg: Number,
     note: String,
-    birthRecord: { type: mongoose.Schema.Types.ObjectId, ref: 'GiveBirthRecord' }
+    birthRecord: { type: mongoose.Schema.Types.ObjectId, ref: 'give_birth_records' }
 });
 
 var WeaningModel = mongoose.model('weanings', WeaningSchema); 

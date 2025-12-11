@@ -1,0 +1,109 @@
+<div class="sidebar">
+    <div class="sidebar-logo">
+        <img src="/img/logo.png" alt="logo">
+        <span class="logo-text">PigGo</span>
+    </div>
+
+    <ul class="sidebar-menu">
+
+        <li class="{{#if (eq active 'home')}}active{{/if}}">
+            <a href="/home" class="menu-link">
+                <span class="menu-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+        </li>
+
+        <li class="{{#if (eq active 'area')}}active{{/if}}">
+            <a href="/area/" class="menu-link">
+                <span class="menu-icon">🏘️</span>
+                <span>Area</span>
+            </a>
+        </li>
+
+        <li class="menu-item has-sub">
+            <a href="#" class="menu-link">
+                <span class="menu-icon">🩺</span>
+                <span>Health monitoring</span>
+            </a>
+            <!-- Submenu -->
+            <ul class="submenu">
+                <li class="{{#if (eq active 'barnHealth')}}active{{/if}}">
+                    <a href="/barn-health/">Barn health </a>
+                </li>
+                <li class="{{#if (eq active 'healthHistory')}}active{{/if}}">
+                    <a href="/health-history/with-health-history">Health history</a>
+                </li>
+            </ul>
+        </li>
+
+        <li class="{{#if (eq active 'foodration')}}active{{/if}}">
+            <a href="/food-ration/" class="menu-link">
+                <span class="menu-icon">🌽</span>
+                <span>Feeding setup</span>
+            </a>
+        </li>
+
+        <li class="{{#if (eq active 'druguse')}}active{{/if}}">
+            <a href="/drug-use/" class="menu-link">
+                <span class="menu-icon">💊</span>
+                <span>Medication regimen</span>
+            </a>
+        </li>
+
+        <li class="menu-item has-sub">
+            <a href="#" class="menu-link">
+                <span class="menu-icon">📦</span>
+                <span>Warehouse</span>
+            </a>
+            <!-- Submenu -->
+            <ul class="submenu">
+                <li class="{{#if (eq active 'foodWareHouse')}}active{{/if}}">
+                    <a href="/food-warehouse/">Bran warehouse </a>
+                </li>
+                <li class="{{#if (eq active 'meditionWareHouse')}}active{{/if}}">
+                    <a href="/medition-warehouse/">Medition warehouse </a>
+                </li>
+                <li class="{{#if (eq active 'herdWareHouse')}}active{{/if}}">
+                    <a href="/herd/">Herd</a>
+                </li>
+            </ul>
+        </li>
+
+        {{!-- <li class="{{#if (eq active 'breedingRecord')}}active{{/if}}">
+            <a href="/breeding-record/">
+                <i class="icon icon-worker"></i>
+                <span>Reproductive</span>
+            </a>
+        </li> --}}
+
+        <li class="{{#if (eq active 'invoice')}}active{{/if}}">
+            <a href="/invoices" class="menu-link">
+                <span class="menu-icon">🧾</span>
+                <span>Invoice</span>
+            </a>
+        </li>
+
+        <li class="menu-item has-sub">
+            <a href="#" class="menu-link">
+                <span class="menu-icon">💰</span>
+                <span>Sales management</span>
+            </a>
+            <!-- Submenu -->
+            <ul class="submenu">
+                <li class="{{#if (eq active 'saleInvoiceManagement')}}active{{/if}}">
+                    <a href="/sell-pigs/">Sale invoice </a>
+                </li>
+                <li class="{{#if (eq active 'sellPigs')}}active{{/if}}">
+                    <a href="/sell-pigs/create-invoice">Create invoice </a>
+                </li>
+                <li class="{{#if (eq active 'meditionWareHouse')}}active{{/if}}">
+                    <a href="/customers/"> Customer management </a>
+                </li>
+                <li class="{{#if (eq active 'herdWareHouse')}}active{{/if}}">
+                    <a href="/supplier/">Supplier management</a>
+                </li>
+            </ul>
+        </li>        
+
+    </ul>
+</div>

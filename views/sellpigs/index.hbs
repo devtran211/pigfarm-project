@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>Sale invoice</h1>
+            
+        </div>
+
+        <div class="stats-cards">
+            {{!-- <div class="card total-amount">
+                <div class="icon-box green">
+                    <span class="material-icons">attach_money</span>
+                </div>
+                <div class="info">
+                    <p class="amount">143,000,000₫</p>
+                    <p class="label">Tổng tiền</p>
+                </div>
+            </div> --}}
+
+            {{!-- <div class="card paid-amount">
+                <div class="icon-box blue">
+                    <span class="material-icons">paid</span>
+                </div>
+                <div class="info">
+                    <p class="amount">143,000,000₫</p>
+                    <p class="label">Tiền đã trả</p>
+                </div>
+            </div> --}}
+
+            {{!-- <div class="card unpaid-amount">
+                <div class="icon-box yellow">
+                    <span class="material-icons">toll</span>
+                </div>
+                <div class="info">
+                    <p class="amount">0₫</p>
+                    <p class="label">Tiền chưa trả</p>
+                </div>
+            </div> --}}
+        </div>
+
+        <div class="content-panel">
+            <div class="toolbar-top">
+                <div class="display-info">
+                </div>
+                <div class="action-buttons">
+                    <button class="action-button create-invoice">
+                        <span class="material-icons icon-left">add</span>
+                        Create invoice
+                    </button>
+                </div>
+            </div>
+
+            <div class="data-table">
+                <div class="filter-row">
+                    <div class="col-filter code-filter">
+                        <p>Invoice code</p>
+                        <input type="text" placeholder="Searching...">
+                    </div>
+                    <div class="col-filter item-code-filter">
+                        <p>Customer</p>
+                        <input type="text" placeholder="Searching...">
+                    </div>
+                    <div class="col-filter payment-filter">
+                        <p>Payment status</p>
+                        <select>
+                            <option>Paid</option>
+                            <option>Half paid</option>
+                            <option>Unpaid</option>
+                        </select>
+                        <span class="material-icons">arrow_drop_down</span>
+                    </div>
+                    <div class="col-filter total-filter">
+                        <p>Total</p>
+                    </div>
+                    <div class="col-filter date-filter">
+                        <p>Export date</p>
+                        <input type="date" placeholder="Choose time">
+                    </div>
+                </div>
+
+                {{#each invoices}}
+                <div class="data-row">
+                    <div class="data-col code-col">
+                        <a href="/sell-pigs/detail/{{this._id}}">{{this.invoiceCode}}</a>
+                    </div>
+                    <div class="data-col item-code-col">{{this.customer.name}}</div>
+                    <div class="data-col payment-col">
+                        <span class="status-tag {{statusClass this.paymentStatus}}">
+                        {{this.paymentStatus}}
+                    </span>
+                    </div>
+                    <div class="data-col total-col">{{formatMoney this.totalPrice }}</div>
+                    <div class="data-col date-col">{{formatDate this.exportDate}}</div>
+                    <div class="data-col actions-col">
+                        <div class="data-col actions-col">
+                        <div class="options-wrapper">
+                            <span class="material-icons more-options">more_vert</span>
+                            <div class="options-menu" data-id="{{this._id}}">
+                                <button class="delete-btn">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                {{/each}}              
+                </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script src="/js/sell-pigs-index.js"></script>
+
+<style>
+/* Thiết lập cơ bản */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f6fa;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+    /* ⬅️ Khoảng trống 230px cho SIDEBAR + 20px padding */
+    padding-left: 15px; 
+}
+
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%; 
+}
+
+/* Header và Tabs */
+.header {
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    font-size: 1.5em;
+    font-weight: 500;
+    margin: 0 0 5px 0;
+    color: #495057;
+}
+
+.tabs {
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+    display: flex;
+}
+
+.tabs a {
+    text-decoration: none;
+    padding: 10px 15px;
+    color: #6c757d;
+    font-size: 0.9em;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.tabs a.active {
+    color: #28a745; 
+    border-bottom: 2px solid #28a745;
+}
+
+/* Thẻ Thống kê (Stats Cards) */
+.stats-cards {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 250px;
+}
+
+.icon-box {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 15px;
+    color: white;
+}
+
+.icon-box.green { background-color: #5cb85c; }
+.icon-box.blue { background-color: #007bff; }
+.icon-box.yellow { background-color: #ffc107; }
+.icon-box.red { background-color: #dc3545; }
+
+.icon-box .material-icons {
+    font-size: 24px;
+}
+
+.info .amount {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin: 0;
+}
+
+.info .label {
+    font-size: 0.85em;
+    color: #6c757d;
+    margin: 3px 0 0 0;
+}
+
+/* Bảng Nội dung chính */
+.content-panel {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* Thanh công cụ trên cùng */
+.toolbar-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.display-info {
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.display-info span {
+    font-weight: 600;
+}
+
+.action-buttons button {
+    background: none;
+    border: 1px solid #ccc;
+    color: #6c757d;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-left: 5px;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.action-buttons button:hover {
+    background-color: #f8f9fa;
+    border-color: #b3b3b3;
+}
+
+.action-buttons .icon-left {
+    font-size: 18px;
+    margin-right: 5px;
+}
+
+.action-buttons .create-invoice {
+    background-color: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.action-buttons .create-invoice:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+/* Bảng Dữ liệu (Filter Row & Data Row) */
+.data-table {
+    width: 100%;
+}
+
+.filter-row {
+    display: grid;
+    /* CHỈNH SỬA: 5 Cột dữ liệu + 1 cột hành động */
+    grid-template-columns: 1.5fr 1.5fr 1fr 1.5fr 2fr 30px; 
+    gap: 10px;
+    align-items: flex-end;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.col-filter {
+    position: relative;
+}
+
+.col-filter p {
+    font-size: 0.75em;
+    font-weight: 600;
+    color: #6c757d;
+    margin: 0 0 5px 0;
+    white-space: nowrap;
+}
+
+.col-filter input,
+.col-filter select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 0.9em;
+}
+
+.col-filter input::placeholder {
+    color: #b3b3b3;
+}
+
+.col-filter select {
+    appearance: none; 
+    padding-right: 25px;
+}
+
+.col-filter .material-icons {
+    position: absolute;
+    top: 55%; 
+    right: 5px;
+    font-size: 18px;
+    color: #999;
+    pointer-events: none;
+}
+
+.date-filter .material-icons {
+    top: 50%;
+    transform: translateY(10px);
+}
+
+.date-filter .calendar-icon {
+    right: 30px;
+}
+
+.date-filter .filter-icon {
+    right: 5px;
+}
+
+.payment-filter .material-icons,
+.warehouse-filter .material-icons {
+    right: 5px;
+}
+
+.total-filter .icon-right {
+    right: 5px;
+}
+
+.total-filter .material-icons:first-of-type {
+    left: auto;
+    right: 25px;
+}
+
+
+/* Hàng Dữ liệu (Data Row) */
+.data-row {
+    display: grid;
+    /* CHỈNH SỬA: Phải khớp với bố cục của filter-row */
+    grid-template-columns: 1.5fr 1.5fr 1fr 1.5fr 2fr 30px;
+    gap: 10px;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #f8f9fa; 
+    font-size: 0.95em;
+}
+
+.data-col a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.status-tag {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.status-tag.success {
+    background-color: #e5f6e5;
+    color: #28a745;
+}
+
+.status-tag.dark-green {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.more-options {
+    cursor: pointer;
+    color: #6c757d;
+}
+
+.options-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.more-options {
+    cursor: pointer;
+    font-size: 22px;
+}
+
+.options-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 24px;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+
+.options-menu.active {
+    display: block;
+}
+
+.options-menu .delete-btn {
+    border: none;
+    background: #e63946;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.options-menu .delete-btn:hover {
+    background: #c62828;
+}
+
+</style>

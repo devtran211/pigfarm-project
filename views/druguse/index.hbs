@@ -1,0 +1,629 @@
+<h1>Establish a medication regimen</h1>
+
+<div class="warehouse-filter">
+
+    <div class="warehouse-filter">
+        <div class="filter-group">
+            <select id="filterAreaSelect" name="area">
+                <option value="">All breeding areas...</option>
+                {{#each areas}}
+                    <option value="{{this._id}}" {{#ifCond ../selectedAreaId this._id}}selected{{/ifCond}}>
+                        {{this.name}}
+                    </option>
+                {{/each}}
+            </select>
+        </div>
+    </div>
+
+
+    {{!-- <div class="filter-group">
+        <label>Price</label>
+        <div class="filter-input-icon">
+            <input type="text" placeholder="Giá tiền">
+            <span class="filter-icon">⚲</span>
+        </div>
+    </div> --}}
+</div>
+
+{{#each areaData}}
+
+<div class="area-block" data-area-id="{{this._id}}">
+    
+    <div class="area-header">
+        <h2 class="area-title">{{this.name}}</h2>
+
+
+        <div class="meal-header">
+            <button class="btn-add-drug-area" data-area-id="{{this._id}}">
+                <span class="icon">＋</span> Create
+            </button>
+        </div>
+    </div>
+
+    {{!-- Loop Barns --}}
+    {{#each this.barns}}
+
+    <div class="barn-card" data-barn-id="{{this._id}}">
+
+        <div class="barn-header">
+            <strong>{{this.name}}</strong>
+        </div>
+
+        <div class="meal-header">
+            <button class="btn-add-drug" data-barn-id="{{this._id}}">
+                <span class="icon">＋</span> Create
+            </button>
+        </div>
+
+        <div class="farmgo-card">
+            <table class="farmgo-table">
+                <thead>
+                    <tr>
+                        <th>Start date</th>
+                        <th>End date</th>
+                        <th>Reason</th>
+                        <th>Note</th>
+                        <th class="header-empty"></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {{#if this.rations.length}}
+
+                        {{#each this.rations}}
+                            <tr class="drug-use-row" data-id="{{this._id}}">
+                                <td>{{formatDate this.start_date}}</td>
+                                <td>{{formatDate this.end_date}}</td>
+                                <td>{{this.reason}}</td>
+                                <td>{{this.note}}</td>
+                                <td class="action-wrapper">
+                                    <span class="action-more">⋮</span>
+                                    <div class="action-menu">
+                                        <button class="btn-detail" data-id="{{this._id}}">Detail</button>
+                                        <button class="btn-edit" data-id="{{this._id}}">Edit</button>
+                                        <button class="btn-delete" data-id="{{this._id}}">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {{/each}}
+
+                    {{else}}
+                        <tr>
+                            <td colspan="4" style="text-align:center; color:#888;">
+                                No drug uses yet
+                            </td>
+                            <td></td>
+                        </tr>
+                    {{/if}}
+
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    {{/each}}
+</div>
+
+{{/each}}
+
+
+<dv id="medicationModal" class="modal-overlay">
+<div class="modal-box">
+
+        <div class="modal-header">
+            <span>Set up a medication regimen</span>
+            <span class="modal-close">&times;</span>
+        </div>
+
+        <form id="medicationForm">
+
+            <input type="hidden" name="barnId" id="rationBarnId">
+
+            <div class="form-group">
+                <label>Select barn</label>
+                <select class="input-select small" name="barn">
+                    <option value=""></option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Start date *</label>
+                <input type="date" name="start_date" required>
+            </div>
+
+            <div class="form-group">
+                <label>End date *</label>
+                <input type="date" name="end_date" class="input-shorter" required>
+            </div>
+
+            <div class="form-group">
+                <label>Reason *</label>
+                <input type="text" name="reason" class="input" required>
+            </div>
+
+            <div class="popup-section">
+                <h4 class="section-title">Add medications</h4>
+
+                <div id="medicine-list">
+                    <div class="medicine-row">
+
+                        <input type="text" name="time[]" class="input-small" placeholder="Meal">
+
+                        <select class="input-select" name="medition_warehouse[]">
+                            <option value="" >Select medition</option>
+                        </select>
+
+                        <input type="text" class="input-select small" name="method[]" placeholder="Method">
+
+                        <input type="text" class="input-small" name="dosage[]" placeholder="Dosage">
+
+                        <select class="input-select" name="dosage_unit[]">
+                            <option value="l">l</option>
+                            <option value="ml">ml</option>
+                            <option value="g">g</option>
+                        </select>
+
+                        <button type="button" class="btn-remove-row">−</button>
+                    </div>
+                </div>
+
+                <button type="button" id="add-medicine-row" class="btn-add-row">+ Add</button>
+
+            </div>
+
+            <div class="modal-actions">
+                {{!-- <button type="button" class="btn-cancel modal-close">Hủy</button> --}}
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+</div>
+</div>
+
+<div id="editMedicationModal" class="modal-overlay">
+    <div class="modal-box">
+
+        <div class="modal-header">
+            <span>Edit a medication regimen</span>
+            <span class="modal-close">&times;</span>
+        </div>
+
+        <form id="editMedicationForm">
+
+            <input type="hidden" name="barnId" id="editBarnId">
+
+            <div class="form-group">
+                <label>Select barn</label>
+                <select class="input-select small" name="barn">
+                    <option value=""></option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Start date *</label>
+                <input type="date" name="start_date" required>
+            </div>
+
+            <div class="form-group">
+                <label>End date *</label>
+                <input type="date" name="end_date" class="input-shorter" required>
+            </div>
+
+            <div class="form-group">
+                <label>Reason *</label>
+                <input type="text" name="reason" class="input" required>
+            </div>
+
+            <div class="popup-section">
+                <h4 class="section-title">Add medications</h4>
+
+                <div id="edit-medicine-list">
+                    <div class="medicine-row">
+
+                        <input type="text" name="time[]" class="input-small" placeholder="Meal">
+
+                        <select class="input-select" name="medition_warehouse[]">
+                            <option value="" >Select medition</option>
+                        </select>
+
+                        <input type="text" class="input-select small" name="method[]" placeholder="Method">
+
+                        <input type="text" class="input-small" name="dosage[]" placeholder="Dosage">
+
+                        <select class="input-select" name="dosage_unit[]">
+                            <option value="l">l</option>
+                            <option value="ml">ml</option>
+                            <option value="g">g</option>
+                        </select>
+
+                        <button type="button" class="btn-remove-row">−</button>
+                    </div>
+                </div>
+
+                <button type="button" id="edit-add-medicine-row" class="btn-add-row">+ Add</button>
+
+            </div>
+
+            <div class="modal-actions">
+                {{!-- <button type="button" class="btn-cancel modal-close">Hủy</button> --}}
+                <button type="submit" class="btn-save">Save</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<div id="meditionDetailModal" class="modal-overlay">
+    <div class="modal-box large">
+
+        <div class="modal-header">
+            <span>Medication regimen detail</span>
+            <span class="modal-close detail-close">&times;</span>
+        </div>
+
+        <div class="modal-section">
+
+            <h3 class="section-title">General information</h3>
+            <div class="detail-info">
+                <p><strong>Reason:</strong> <span id="detail-reason"></span></p>
+                <p><strong>Barn:</strong> <span id="detail-barn"></span></p>
+                <p><strong>Start:</strong> <span id="detail-start"></span></p>
+                <p><strong>End:</strong> <span id="detail-end"></span></p>
+            </div>
+
+            <h3 class="section-title">Medication Details</h3>
+            <table class="farmgo-table" id="detail-med-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Method</th>
+                        <th>Dosage</th>
+                        <th>Unit</th>
+                        <th>Medicine</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
+        </div>
+
+    </div>
+</div>
+
+
+<script src="/js/drug-use.js"></script>
+
+<style>
+.area-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;   /* giúp chữ A và nút Create nằm ngang thẳng hàng */
+    margin-bottom: 10px;
+}
+
+.area-title {
+    margin: 0;
+}
+
+.barn-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    margin-bottom: 25px;
+}
+
+.barn-header {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.ration-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ration-table th,
+.ration-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+.ration-table th {
+    background: #f7f9fc;
+    font-weight: 600;
+}
+
+/* FILTER */
+.warehouse-filter {
+    display: flex;
+    flex-wrap: wrap;            /* Cho phép xuống dòng */
+    gap: 20px 40px;             /* Khoảng cách giữa các filter */
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+/* =========== FARMGO CARD WRAPPER ============= */
+.farmgo-card {
+    background: #fff;
+    padding: 0;
+    border-radius: 14px;
+    box-shadow: 0px 2px 10px rgba(0,0,0,0.06);
+    margin-top: 20px;
+    overflow: hidden;
+    border: 1px solid #eef1f4;
+}
+
+/* =========== TABLE STYLE ============= */
+.farmgo-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+/* HEADER */
+.farmgo-table thead tr {
+    background: #f6f9fc;
+}
+
+.farmgo-table th {
+    padding: 14px 20px;
+    font-weight: 600;
+    text-align: center;
+    color: #2f3a4a;
+    border-bottom: 1px solid #e4e8ec;
+    font-size: 15px;
+}
+
+/* DÒNG DỮ LIỆU */
+.farmgo-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f3f5;
+    vertical-align: middle;
+    color: #444;
+    background: #fff;
+}
+
+/* CỘT ĐẦU TIÊN CĂN TRÁI (giống FarmGo) */
+.farmgo-table td:first-child {
+    text-align: center;
+    font-weight: 500;
+}
+
+/* CÁC CỘT KHÁC CĂN GIỮA */
+.farmgo-table td:not(:first-child) {
+    text-align: center;
+}
+
+/* DÒNG CUỐI KHÔNG CÓ BORDER */
+.farmgo-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.meal-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.btn-add-drug-area,
+.btn-add-drug {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #f0fdf4;  /* xanh nhạt */
+    border: 1px solid #22c55e;  /* xanh lá */
+    color: #22c55e;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-add-meal .icon {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.btn-add-meal:hover {
+    background: #dcfce7;  /* xanh đậm hơn */
+}
+
+/*--------------------------- CSS Create new------------------------*/
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999 !important; /* luôn nằm trên cùng */
+}
+
+.modal-box {
+    background: white;
+    width: 70%;
+    border-radius: 10px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px 28px;
+}
+
+
+@keyframes popup {
+    from { transform: scale(0.9); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.modal-close {
+    cursor: pointer;
+    font-size: 22px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group input,
+.form-group textarea {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-save {
+    width: 100%;
+    padding: 12px;
+    background-color: #79c9b1; /* Màu xanh ngọc */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-save i {
+    margin-right: 8px;
+}
+
+.farmgo-card,
+.barn-card,
+.area-block {
+    overflow: visible !important;
+}
+
+.action-wrapper {
+    position: relative !important;
+    overflow: visible !important;
+    z-index: 10;
+}
+
+.action-menu {
+    position: absolute;
+    right: 0;
+    top: 22px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    padding: 8px 0;
+    display: none;
+    z-index: 9999 !important;
+    min-width: 160px;
+}
+
+.popup-section {
+    background: #f9fbfd;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 16px;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.feed-row, .medicine-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.input-select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    flex: 1;
+}
+
+.input-small {
+    width: 100px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.btn-add-row {
+    margin-top: 5px;
+    border: none;
+    background: #1a9c73;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-remove-row {
+    border: none;
+    background: #d9534f;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    width: 28px;
+    height: 28px;
+}
+
+.apply-more {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 14px;
+}
+
+.form-group input {
+    width: 350px;  /* tùy chỉnh */
+}
+
+.form-group:nth-child(2) {
+    display: none !important;
+}
+</style>

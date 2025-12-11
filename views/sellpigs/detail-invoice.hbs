@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice detail</title>
+    <link rel="stylesheet" href="invoice_styles.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="header">
+            <h1>Invoice detail</h1>
+            <div class="tabs-nav">
+                <a href="#" class="inactive-tab">Outbound invoice</a>
+                <span class="separator">/</span>
+                <span class="active-tab">Invoice detail</span>
+            </div>
+        </div>
+
+        <div class="invoice-info-bar">
+            <div class="invoice-meta">
+                Invoice <b> {{invoice.invoiceCode}}</b>** date <b> {{formatDate invoice.exportDate}}</b>, Customer:<b> {{invoice.customer.name}}</b>
+            </div>       
+        </div>
+
+        <div class="invoice-table-container">
+            <div class="table-header">
+                <div>Warehouse</div>
+                <div>Product name</div>
+                <div>Quantity</div>
+                <div>Unit</div>
+                <div>Discount</div>
+                <div>Price</div>
+                {{!-- <div>Total</div>--}}
+                <div class="cell action-cell">  </div> 
+            </div>
+
+        {{#each details}}
+            <div class="table-row">
+                <div class="cell">{{this.warehouse}}</div>
+                <div class="cell">{{this.productName}}</div>
+                <div class="cell">{{this.quantity}}</div>
+                <div class="cell">{{this.unit}}</div>
+                <div class="cell">{{this.discount}}</div>
+                <div class="cell discount-cell">{{formatMoney this.price}}</div>
+                <div class="cell price-cell"></div>
+                <div class="cell total-cell"></div>
+            </div>
+        {{/each}}
+            <div class="summary-area">
+                <div class="summary-row">
+                    <div class="label">Total price:</div>
+                    <div class="value total-label">{{formatMoney invoice.totalPrice}}</div>
+                </div>
+                <div class="summary-row">
+                    <div class="label">Discount:</div>
+                    <div class="value">{{invoice.discount}}</div>
+                </div>
+                <div class="summary-row tax-row">
+                    <div class="label">TAX:</div>
+                    <div class="value tax-value">Tax included</div>
+                </div>
+                <div class="summary-row grand-total-row">
+                    <div class="label grand-label">Total amount to be paid:</div>
+                    <div class="value grand-value">{{formatMoney invoice.totalPrice}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<style>
+/* Thiết lập cơ bản */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f6fa;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+    display: flex;
+    justify-content: center;
+}
+
+.invoice-container {
+    max-width: 1200px;
+    width: 100%;
+    background-color: white;
+    padding: 20px 30px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Header và Navigation */
+.header h1 {
+    font-size: 1.2em;
+    font-weight: 500;
+    margin: 0;
+    color: #495057;
+}
+
+.tabs-nav {
+    font-size: 0.9em;
+    margin-bottom: 20px;
+}
+
+.tabs-nav a, .tabs-nav span {
+    text-decoration: none;
+    color: #6c757d;
+}
+
+.tabs-nav .active-tab {
+    color: #333;
+    font-weight: 600;
+}
+
+.tabs-nav .separator {
+    margin: 0 5px;
+}
+
+/* Thông tin Hóa đơn và Nút hành động */
+.invoice-info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+.invoice-meta {
+    font-size: 1em;
+    color: #495057;
+}
+
+.invoice-meta b {
+    font-weight: 600;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.action-button {
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.action-button .icon-left {
+    font-size: 18px;
+    margin-right: 5px;
+}
+
+.cancel-button {
+    background-color: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+}
+
+.cancel-button:hover {
+    background-color: #c82333;
+}
+
+.edit-button {
+    background-color: white;
+    color: #007bff;
+    border: 1px solid #007bff;
+}
+
+.edit-button:hover {
+    background-color: #f0f8ff;
+}
+
+/* Bảng Chi tiết Hàng hóa */
+.invoice-table-container {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* Cấu trúc Grid cho bảng */
+.table-header,
+.table-row {
+    display: grid;
+    /* Định nghĩa 8 cột: 
+       Kho | Tên hàng | SL | Đơn vị | Chiết khấu | Giá bán | Thành tiền | Hành động */
+    grid-template-columns: 1.5fr 4fr 1fr 1.5fr 1.5fr 3fr 2fr 30px; 
+    align-items: center;
+    padding: 10px 15px;
+    gap: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.table-header {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    font-size: 0.85em;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+.table-row {
+    font-size: 0.9em;
+}
+
+.table-row:nth-child(even) {
+    background-color: #fcfcfc;
+}
+
+.table-row:last-child {
+    border-bottom: none;
+}
+
+.cell {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.table-header div {
+    text-align: center;
+}
+
+.table-row .cell {
+    text-align: center;
+}
+
+.discount-cell,
+.price-cell,
+.total-cell {
+    text-align: right;
+}
+
+.action-cell {
+    justify-self: center;
+}
+
+.more-options {
+    color: #6c757d;
+    cursor: pointer;
+}
+
+/* Phần Tổng kết Thanh toán */
+.summary-area {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Căn toàn bộ khối tổng kết sang phải */
+    padding: 15px;
+    background-color: #fef8f0; /* Màu nền vàng nhạt */
+}
+
+.summary-row {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    max-width: 400px; /* Giới hạn chiều rộng của các dòng tổng kết */
+    padding: 5px 0;
+    font-size: 0.95em;
+}
+
+.summary-row:first-child {
+    font-weight: 600;
+}
+
+.summary-row .label {
+    flex: 1;
+    text-align: right;
+    padding-right: 15px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.summary-row .value {
+    flex-basis: 150px; /* Độ rộng cố định cho cột giá trị */
+    text-align: right;
+    font-weight: 600;
+    color: #333;
+}
+
+.summary-row.tax-row {
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+    margin-top: 5px;
+}
+
+.summary-row.grand-total-row {
+    border-top: 2px solid #ddd;
+    padding-top: 10px;
+    margin-top: 10px;
+    font-size: 1.1em;
+}
+
+.grand-total-row .grand-label {
+    color: #dc3545; /* Màu đỏ cho nhãn tổng tiền */
+}
+
+.grand-total-row .grand-value {
+    color: #dc3545; /* Màu đỏ cho giá trị tổng tiền */
+}
+
+.total-label {
+    color: #28a745; /* Màu xanh lá cây cho Tổng tiền ban đầu */
+}
+</style>

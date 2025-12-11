@@ -1,0 +1,672 @@
+<div class="page-title">Invoices</div>
+
+<!-- FILTER SECTION -->
+<div class="warehouse-filter">
+
+    <div class="filter-group">
+        <label>Invoice name</label>
+        <input type="text" placeholder="Searching...">
+    </div>
+
+    <div class="filter-group">
+        <label>Price</label>
+        <div class="filter-input-icon">
+            <input type="text" placeholder="Price">
+            <span class="filter-icon">⚲</span>
+        </div>
+    </div>
+
+    <div class="filter-group">
+        <label>Supplier</label>
+        <div class="filter-input-icon">
+            <input type="text" placeholder="Supplier name">
+            <span class="filter-icon">⚲</span>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn-farmgo"><span class="plus-icon">+</span> Create invoice </button>
+    </div>
+
+</div>
+
+<!-- TABLE -->
+<div class="table-wrapper">
+    <table class="custom-table">
+<thead>
+    <tr>
+        <th>Invoice name</th>
+        <th>Total price</th>
+        <th>Supplier</th>
+        <th>Payment status</th>
+        <th>Creation date</th>
+        <th></th>
+    </tr>
+</thead>
+
+<tbody>
+    {{#each items}}
+    <tr class="invoice-row {{#if this.isDelete}}deleted-row{{/if}}" data-id="{{this._id}}">
+        <td>
+            <strong>{{this.name}}</strong><br>
+        </td>
+
+        <td>{{formatMoney this.total}}</td>
+
+        <td>
+            {{#if this.supplier}}
+                {{this.supplier.name}}
+            {{else}}
+                ---
+            {{/if}}
+        </td>
+
+        <td>
+            {{#if (eq this.payment_status "paid")}}
+                <span class="status-label status-progress">Paid</span>
+            {{else}}
+                <span class="status-label status-closed">Unpaid</span>
+            {{/if}}
+        </td>
+
+        <td>{{formatDate this.creation_date}}</td>
+
+        <td class="action-wrapper">
+            <span class="action-more">⋮</span>
+            <div class="action-menu">
+                <button class="btn-detail" data-id="{{this._id}}">Detail</button>
+                <button class="btn-delete" data-id="{{this._id}}">Delete</button>
+            </div>
+        </td>
+    </tr>
+    {{/each}}
+</tbody>
+</table>
+</div>
+
+<div id="invoiceOverlay">
+    <div id="createInvoiceModal" class="container">
+            <button class="close-btn" aria-label="Đóng">&times;</button>
+            
+            <h2>Create Invoice</h2>
+
+            <div class="main-form-group">
+                <label for="invoice-name">Invoice name <span style="color:red">*</span></label>
+                <input type="text" id="name" placeholder="Enter invoice name">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+
+            <div class="import-section">
+                <h3>Import breeding</h3>
+                
+                <div class="import-header-row">
+                    <select name="select-breeding">
+                        <option>Select breeding</option>
+                    </select>
+                </div>
+                
+                <div class="import-detail-fields">
+                    <input type="text" name="price[]" placeholder="Price">
+                    <input type="text" name="quantity[]" placeholder="Quantity">
+                </div>
+                
+                <div class="import-action-group">
+                    <button class="add-btn">+ Add</button>
+                    
+                </div>
+            </div>
+
+            <div class="import-section">
+                <h3>Import food</h3>
+                <div class="import-header-row">
+                    <select name="select-food">
+                        <option>Import food</option>
+                    </select>
+                </div>
+                
+                <div class="import-detail-fields">
+                    <input type="text" name="price[]" placeholder="Price">
+                    <input type="text" name="quantity[]" placeholder="Quantity">
+                </div>
+                
+                <div class="import-action-group">
+                    <button class="add-btn">+ Add</button>
+                    
+                </div>
+            </div>
+
+            <div class="import-section">
+                <h3>Import medition</h3>
+                <div class="import-header-row">
+                    <select name="select-medition">
+                        <option>Import medition</option>
+                    </select>
+                </div>
+                
+                <div class="import-detail-fields">
+                    <input type="text" name="price[]" placeholder="Price">
+                    <input type="text" name="quantity[]" placeholder="Quantity">
+                </div>
+                
+                <div class="import-action-group">
+                    <button class="add-btn">+ Add</button>
+                    
+                </div>
+            </div>
+
+            <div class="main-form-group">
+                <label for="invoice-name">Discount <span style="color:red">*</span></label>
+                <input type="text" name="discount" id="discount-total" placeholder="Enter discount">
+            </div>
+
+            <div class="total-footer-group">
+                <button class="update-price-btn">Update price</button>
+                <div class="total-info">
+                    Total: 0.00
+                </div>
+            </div>
+
+            <div class="main-form-group">
+                <label for="payment-status">Payment status <span style="color:red">*</span></label>
+                <select name="payment_status" id="payment-status">
+                    <option>Partial</option>
+                </select>
+            </div>
+
+            <div class="main-form-group">
+                <label for="supplier">Supplier <span style="color:red">*</span></label>
+                <select name="supplier" id="supplier">
+                    <option>-- Select supplier --</option>
+                </select>
+            </div>
+
+            <div class="footer-action">
+                <button class="submit-btn">Thêm</button>
+            </div>
+
+    </div>
+</div>
+
+
+<script src="/js/invoice.js"></script>
+
+<style>
+.page-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* SUMMARY */
+.warehouse-summary {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.summary-box {
+    flex: 1;
+    padding: 18px;
+    border-radius: 10px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-box .value {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.summary-box .label {
+    font-size: 14px;
+}
+
+.green { background: #1a9c73; }
+.yellow { background: #F6BE00; }
+.blue { background: #3299ff; }
+.red { background: #E63946; }
+
+/* FILTER */
+.warehouse-filter {
+    display: flex;
+    flex-wrap: wrap;            /* Cho phép xuống dòng */
+    gap: 20px 40px;             /* Khoảng cách giữa các filter */
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+/* Table */
+.warehouse-table th,
+.warehouse-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Vị trí cho cột hành động */
+.action-wrapper {
+    position: relative;
+}
+
+/* Menu ẩn mặc định */
+.action-menu {
+    position: absolute;
+    right: 0;
+    top: 25px;
+
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+
+    width: 130px;
+    padding: 6px 0;
+    display: none;
+
+    z-index: 9999; /* >>> giúp menu luôn nổi trên table */
+}
+
+/* Nút trong menu */
+.action-menu button {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 15px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.action-menu button:hover {
+    background: #f5f7fa;
+}
+
+.action-wrapper:hover .action-menu {
+    display: block;
+}
+
+/* ===== VÙNG BỌC BẢNG ===== */
+.table-wrapper {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 10px 18px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    overflow: visible;
+}
+
+/* ===== BẢNG ===== */
+.custom-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: "Inter", sans-serif;
+    font-size: 15px;
+    color: #333;
+}
+
+/* ===== HEADER ===== */
+.custom-table thead tr {
+    background: #f6f8f9;
+}
+
+.custom-table thead th {
+    padding: 14px 16px;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    background: #f6f8f9;
+}
+
+/* ===== BODY ===== */
+.custom-table tbody tr {
+    transition: 0.23s;
+}
+
+.custom-table tbody tr:hover {
+    background: #edf2f7;
+}
+
+.custom-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f2f4;
+}
+
+/* ===== LABEL TRẠNG THÁI ===== */
+.status-label {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-closed {
+    background: #ffe3e3;
+    color: #d64545;
+}
+
+.status-progress {
+    background: #d1f7ef;
+    color: #0a9a7d;
+}
+
+/* ===== CHECKBOX TRONG BẢNG ===== */
+.table-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* ===== ICON SẮP XẾP (↑↓) ===== */
+.sort-icon {
+    font-size: 13px;
+    margin-left: 6px;
+    opacity: 0.6;
+}
+
+/* Căn giữa header */
+.custom-table th {
+    text-align: center !important;
+}
+
+/* Căn giữa dữ liệu */
+.custom-table td {
+    text-align: center !important;
+}
+
+/* ===== CĂN NÚT SANG BÊN PHẢI ===== */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;          /* Đẩy sát sang bên phải */
+    margin-top: 10px;           /* Đẩy xuống dưới filter */
+}
+
+/* Thu nhỏ nút */
+.btn-farmgo {
+    background: #e8f5f1;
+    border: 1px solid #bde3d8;
+    padding: 6px 14px;          /* nhỏ hơn */
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0a8f6a;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+}
+
+.btn-farmgo:hover {
+    background: #d9efe8;
+}
+
+/* Icon + */
+.plus-icon {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* Hover */
+.btn-farmgo:hover {
+    background: #d9efe8;
+    border-color: #a8d7cb;
+}
+
+/*----- Create new invoice css -----*/
+.container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 750px; 
+    padding: 30px;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #aaa;
+}
+
+h2 {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+/* ------------------- Điều chỉnh các Input chính ------------------- */
+.main-form-group {
+    margin-bottom: 25px; 
+}
+
+.main-form-group label {
+    display: block; 
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.main-form-group input, 
+.main-form-group select {
+    padding: 12px; 
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    max-width: 450px; 
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ------------------- Phần Import Items ------------------- */
+.import-section {
+    padding: 20px; 
+    border: 1px solid #eee; 
+    border-radius: 4px;
+    margin-bottom: 30px;
+}
+
+.import-section h3 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+/* Hàng Select */
+.import-header-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.import-header-row select {
+    max-width: 350px; 
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Khối Price/Quantity/Discount */
+.import-detail-fields {
+    display: flex; 
+    gap: 15px;
+    margin-bottom: 20px; 
+    max-width: 550px; 
+}
+
+.import-detail-fields input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Nút Add và Remove */
+.import-action-group {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start; 
+}
+
+.add-btn, .remove-btn {
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 13px;
+    white-space: nowrap;
+    border: none;
+    cursor: pointer;
+    line-height: 1.5;
+    height: 38px;
+}
+
+.add-btn {
+    background-color: #38c172; 
+    color: white;
+}
+
+.remove-btn {
+    background-color: #dc3545; 
+    color: white;
+}
+
+/* ------------------- Footer/Nút Tổng kết CHỈNH SỬA Ở ĐÂY ------------------- */
+
+/* Nhóm nút Cập nhật và Total Text */
+.total-footer-group {
+    display: flex;
+    align-items: center; /* Căn giữa theo chiều dọc */
+    justify-content: flex-end; /* Đẩy sang phải */
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+/* Nút Cập nhật giá */
+.update-price-btn {
+    background-color: #e6f7ff;
+    color: #1890ff;
+    border: 1px solid #91d5ff;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    margin-right: 20px; /* Tạo khoảng cách với Total */
+    white-space: nowrap;
+}
+
+/* Total Text */
+.total-info {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    /* Không cần margin-bottom/top ở đây vì đã dùng flexbox */
+}
+
+.footer-action {
+    padding-top: 10px; 
+    text-align: center;
+}
+
+.submit-btn {
+    background-color: #17a2b8;
+    color: white;
+    border: none;
+    padding: 15px 30px; 
+    border-radius: 4px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    max-width: 450px; 
+}
+
+/* Overlay mờ toàn màn hình */
+#invoiceOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+/* Popup container */
+#createInvoiceModal {
+    background: #fff;
+    padding: 25px;
+    width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 8px;
+    position: relative;
+    animation: fadeIn 0.25s ease;
+}
+
+/* Nút đóng */
+#createInvoiceModal .close-btn {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    border: none;
+    background: none;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+tr.deleted-row td {
+    background-color: #ffe5e5 !important;
+    color: #8b0000 !important;
+}
+
+tr.deleted-row:hover td {
+    background-color: #ffd6d6 !important;
+}
+
+tr.deleted-row td {
+    text-decoration: line-through;
+}
+
+
+</style>

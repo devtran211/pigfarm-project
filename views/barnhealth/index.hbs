@@ -1,0 +1,614 @@
+<h1>Monitor barn health</h1>
+
+{{!-- <div class="warehouse-filter">
+    <div class="filter-group">
+        <select id="filterAreaSelect">
+            <option value="">Breeding area...</option>
+
+            {{#each areas}}
+                <option value="{{this._id}}"
+                    {{#ifCond ../selectedAreaId this._id}}selected{{/ifCond}}>
+                    {{this.name}}
+                </option>
+            {{/each}}
+        </select>
+    </div>
+</div> --}}
+
+
+<div class="area-header">
+        <h2 class="area-title">{{this.name}}</h2>
+
+        <select id="filterAreaSelect">
+            <option value="">Breeding area...</option>
+            {{#each areas}}
+                <option value="{{this._id}}"
+                    {{#ifCond ../selectedAreaId this._id}}selected{{/ifCond}}>
+                    {{this.name}}
+                </option>
+            {{/each}}
+        </select>
+</div>
+
+{{#each areaData}}
+<div class="area-block" data-area-id="{{this._id}}">
+    <h2 class="area-title">{{this.name}}</h2>
+
+    {{#each this.barns}}
+    <div class="barn-card" data-barn-id="{{this._id}}">
+        <div class="barn-header">
+             <strong class="barn-name" data-barn-id="{{this._id}}">{{this.name}}</strong>
+        </div>
+
+        <div class="meal-header">
+            <button class="btn-add-health" data-barn-id="{{this._id}}">
+                <span class="icon">＋</span> Create
+            </button>
+        </div>
+
+        <div class="farmgo-card">
+            <table class="farmgo-table">
+                <thead>
+                    <tr>
+                        <th>Average weight</th>
+                        <th>Loss</th>
+                        <th>FaecesStatus</th>
+                        <th>DateOfInspection</th>
+                        <th>Note</th>
+                        <th class="header-empty"></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {{#if this.healthRecords.length}}
+                        {{#each this.healthRecords}}
+                            <tr>
+                                <td>{{averageWeight}}</td>
+                                <td>{{loss}}</td>
+                                <td>{{faecesStatus}}</td>
+                                <td>{{formatDate dateOfInspection}}</td>
+                                <td>{{note}}</td>
+                                <td class="action-wrapper">
+                                    <span class="action-more">⋮</span>
+                                    <div class="action-menu">
+                                        <button class="btn-edit" data-id="{{this._id}}">Edit</button>
+                                        <button class="btn-delete" data-id="{{this._id}}">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {{/each}}
+                    {{else}}
+                        <tr>
+                            <td colspan="5" style="text-align:center; color:#888;">
+                                No health records yet
+                            </td>
+                            <td></td>
+                        </tr>
+                    {{/if}}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+    {{/each}}
+</div>
+{{/each}}
+
+<div id="healthModal" class="modal-overlay">
+    <div class="modal-content">
+            
+        <div class="header">
+            <h2>Record barn health information</h2>
+            <button class="close-btn" aria-label="Đóng">&times;</button>
+        </div>
+
+        <form id="healthForm">
+
+            <div class="form-body">
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Average weight <span class="required">*</span></label>
+                        <input type="number" name="averageWeight">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Loss <span class="required">*</span></label>
+                        <input type="number" name="loss" min="0">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Faeces status <span class="required">*</span></label>
+                        <input type="text" name="faecesStatus">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Date Of Inspection <span class="required">*</span></label>
+                        <input type="date" name="dateOfInspection">
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Note</label>
+                    <textarea name="note"></textarea>
+                </div>
+
+            </div>
+
+            <div class="footer">
+                <button type="submit" class="save-btn">
+                    <i class="fas fa-save"></i> Save
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<div id="editHealthModal" class="modal-overlay">
+    <div class="modal-content">
+
+        <div class="header">
+            <h2>Edit barn health record</h2>
+            <button class="close-btn">&times;</button>
+        </div>
+
+        <form id="editHealthForm">
+            <div class="form-body">
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Average weight</label>
+                        <input type="number" name="averageWeight">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Loss</label>
+                        <input type="number" name="loss">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Faeces status</label>
+                        <input type="text" name="faecesStatus">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Date of inspection</label>
+                        <input type="date" name="dateOfInspection">
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Note</label>
+                    <textarea name="note"></textarea>
+                </div>
+
+            </div>
+
+            <div class="footer">
+                <button type="submit" class="save-btn">Save</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+
+<script src="/js/health-barn.js"></script>
+
+<style>
+.area-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 20px 0 10px;
+}
+
+.barn-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    margin-bottom: 25px;
+}
+
+.barn-header {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.ration-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ration-table th,
+.ration-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+.ration-table th {
+    background: #f7f9fc;
+    font-weight: 600;
+}
+
+/* =========== FARMGO CARD WRAPPER ============= */
+.farmgo-card {
+    background: #fff;
+    padding: 0;
+    border-radius: 14px;
+    box-shadow: 0px 2px 10px rgba(0,0,0,0.06);
+    margin-top: 20px;
+    overflow: visible;
+    border: 1px solid #eef1f4;
+}
+
+/* =========== TABLE STYLE ============= */
+.farmgo-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+/* HEADER */
+.farmgo-table thead tr {
+    background: #f6f9fc;
+}
+
+.farmgo-table th {
+    padding: 14px 20px;
+    font-weight: 600;
+    text-align: center;
+    color: #2f3a4a;
+    border-bottom: 1px solid #e4e8ec;
+    font-size: 15px;
+}
+
+/* DÒNG DỮ LIỆU */
+.farmgo-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f3f5;
+    vertical-align: middle;
+    color: #444;
+    background: #fff;
+}
+
+/* CỘT ĐẦU TIÊN CĂN TRÁI (giống FarmGo) */
+.farmgo-table td:first-child {
+    text-align: center;
+    font-weight: 500;
+}
+
+/* CÁC CỘT KHÁC CĂN GIỮA */
+.farmgo-table td:not(:first-child) {
+    text-align: center;
+}
+
+/* DÒNG CUỐI KHÔNG CÓ BORDER */
+.farmgo-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.meal-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.btn-add-health {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #f0fdf4;  /* xanh nhạt */
+    border: 1px solid #22c55e;  /* xanh lá */
+    color: #22c55e;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-add-meal .icon {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.btn-add-meal:hover {
+    background: #dcfce7;  /* xanh đậm hơn */
+}
+
+/* CSS create new */
+/* Container của Popup */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+    display: none; /* 🔥 FIX: ẨN MẶC ĐỊNH */
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+}
+
+/* Header */
+.header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #aaa;
+}
+
+/* Body */
+.form-body {
+    padding: 20px;
+}
+
+/* Grid layout */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.form-group label {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.form-group label .required {
+    color: #e3342f;
+}
+
+.form-group input, 
+.form-group select,
+.form-group .custom-select-control {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Full width field */
+.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Custom input with icon */
+.input-with-icon {
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon input,
+.input-with-icon select {
+    flex-grow: 1;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+}
+
+.input-with-icon button {
+    background-color: #f8fafc;
+    border: 1px solid #ddd;
+    border-left: none;
+    padding: 10px 12px;
+    cursor: pointer;
+    color: #38c172;
+    font-size: 16px;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Tag select */
+.harvest-select-control {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px 10px;
+    background-color: white;
+}
+
+.harvest-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #cfebe6;
+    color: #2c7a7b;
+    padding: 4px 8px;
+    margin-right: 5px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.harvest-tag span {
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.harvest-arrow {
+    margin-left: auto;
+    color: #888;
+}
+
+/* Textarea */
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Footer */
+.footer {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.save-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #79c9b1;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.save-btn i {
+    margin-right: 8px;
+}
+
+.warehouse-filter {
+    display: flex;
+    flex-wrap: wrap;            /* Cho phép xuống dòng */
+    gap: 20px 40px;             /* Khoảng cách giữa các filter */
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+/* NÚT 3 CHẤM */
+.action-wrapper {
+    position: relative;
+    text-align: center;
+}
+
+/* Icon 3 chấm */
+.action-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 20px;
+    color: #4b5563; /* xám đậm nhẹ */
+    transition: all 0.2s ease-in-out;
+}
+
+.action-more:hover {
+    background: #f3f4f6;       /* xám nhạt */
+    color: #111827;            /* xám đậm */
+    transform: scale(1.05);    /* hiệu ứng phóng nhẹ */
+}
+
+/* MENU DROPDOWN */
+.action-menu {
+    position: absolute;
+    top: 38px;
+    right: 0;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.12);
+    padding: 6px 0;
+    display: none; /* hiển thị qua JS */
+    min-width: 110px;
+    z-index: 50;
+    border: 1px solid #e5e7eb;
+}
+
+/* Nút trong menu */
+.action-menu button {
+    width: 100%;
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-size: 14px;
+    color: #374151;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.action-menu button:hover {
+    background-color: #f3f4f6;
+}
+
+/* Nếu muốn thêm icon trước */
+.action-menu button i {
+    margin-right: 6px;
+}
+
+.area-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0px;
+}
+
+.area-header select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+}
+
+</style>

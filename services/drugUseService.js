@@ -5,7 +5,7 @@ const DrugUseLogModel = require("../models/DrugUseLog");
 const MeditionWareHouseModel = require("../models/MeditionWareHouse");
 const BarnModel = require("../models/Barn");
 const { parseCapacity, toBaseUnit } = require("./cvs");
-const { calculateAndSaveInvestmentMedCost } = require("./calculatePricePerBarn");
+const { calculateAndSaveInvestmentMedCost, calculateAndSaveInvestmentUpdateMedCost } = require("./calculatePricePerBarn");
 
 /* Tính số lượng chai/lọ cần dùng dựa trên số lợn, số ngày, dung tích thuốc */
 function calculateInventoryNeeded(dosagePerAnimal, unit, medition, numberOfPigs = 1, numberOfDays = 1) {
@@ -35,7 +35,7 @@ async function createDrugUse(payload) {
     if (barnIds && barnIds.length > 0) {
         barns = await BarnModel.find({ _id: { $in: barnIds } });
     } else if (areaId) {
-        barns = await BarnModel.find({ area: areaId });
+        barns = await BarnModel.find({ breedingarea: areaId });
     }
     if (barns.length === 0) throw new Error("Không tìm thấy chuồng áp dụng thuốc");
 
@@ -112,315 +112,629 @@ function diffDaysInclusive(startDateInput, endDateInput) {
   return diff >= 0 ? diff + 1 : 0;
 }
 
+// async function editDrugUse(drugUseId, payload) {
+//   const session = await mongoose.startSession();
+//   try {
+//     let finalResult = null;
+//     let toDeductMed = [];
+
+//     await session.withTransaction(async () => {
+//       // 1) Load existing DrugUse
+//       const oldDrugUse = await DrugUseModel.findById(drugUseId).session(session);
+//       if (!oldDrugUse) throw new Error("DrugUse không tồn tại");
+
+//       // 2) Get the barn associated with oldDrugUse (we expect one barn per doc)
+//       const oldBarnId = (oldDrugUse.barn && oldDrugUse.barn[0]) ? oldDrugUse.barn[0] : null;
+//       if (!oldBarnId) throw new Error("DrugUse hiện tại không liên kết tới chuồng nào");
+
+//       const oldBarn = await BarnModel.findById(oldBarnId).session(session);
+//       if (!oldBarn) throw new Error("Chuồng liên quan không tồn tại");
+
+//       // 3) Load old details
+//       const oldDetails = await DrugUseDetailModel.find({ drug_use: oldDrugUse._id }).session(session);
+
+//       // 4) ROLLBACK INVENTORY based on oldDetails + logs (completed)
+//       // build rollbackMap: medId -> totalUnitsToReturn
+//       const rollbackMap = new Map();
+//       const oldNumberOfDays = diffDaysInclusive(oldDrugUse.start_date, oldDrugUse.end_date);
+//       for (const od of oldDetails) {
+//         if (!od.medition_warehouse) continue;
+//         // count completed logs for this detail
+//         const completedCount = await DrugUseLogModel.countDocuments({
+//           med_details: od._id,
+//           time: od.time,
+//           status: "completed"
+//         }).session(session);
+
+//         const daysToReturn = completedCount > 0 ? completedCount : oldNumberOfDays;
+
+//         // fetch med
+//         const med = await MeditionWareHouseModel.findById(od.medition_warehouse).session(session);
+//         if (!med) throw new Error(`Medition warehouse không tồn tại cho detail ${od._id}`);
+
+//         const units = calculateInventoryNeeded(
+//           od.dosage,
+//           od.dosage_unit,
+//           med,
+//           Number(oldBarn.total_pigs || 0),
+//           Number(daysToReturn || 0)
+//         );
+
+//         console.log("Lượng thuốc của bữa cũ: " + units);
+//         const usedUnit = units - daysToReturn;
+
+//         const key = med._id.toString();
+//         rollbackMap.set(key, (rollbackMap.get(key) || 0) + units);
+
+//         if(completedCount > 0){
+//           toDeductMed.push({
+//             import_price: Number(med.import_price),
+//             originalInventory: Number(med.original_inventory),
+//             requiredUnits: usedUnit
+//           })
+//         } 
+//       }
+//       calculateAndSaveInvestmentMedCost({barns: [oldBarn], toDeductMed});
+
+//       // Apply rollback to med inventories
+//       for (const [medId, qty] of rollbackMap.entries()) {
+//         const med = await MeditionWareHouseModel.findById(medId).session(session);
+//         if (!med) throw new Error(`Medition not found while rolling back: ${medId}`);
+//         med.inventory = Number(med.inventory || 0) + Number(qty || 0);
+//         console.log("Tồn kho cho bữa cũ: " + med.inventory);
+//         await med.save({ session });
+//       }
+
+//       // 5) Delete old details and their logs (per your 2.A requirement)
+//       const oldDetailIds = oldDetails.map(d => d._id);
+//       if (oldDetailIds.length > 0) {
+//         // delete logs referencing these details
+//         // await DrugUseLogModel.deleteMany({ med_details: { $in: oldDetailIds } }).session(session);
+//         // delete the details
+//         await DrugUseDetailModel.deleteMany({ _id: { $in: oldDetailIds } }).session(session);
+//       }
+
+//       // 6) Determine target barns from payload (if none provided -> keep old barn)
+//       let targetBarns = null;
+//       if (Array.isArray(payload.barnIds) && payload.barnIds.length > 0) {
+//         targetBarns = await BarnModel.find({ _id: { $in: payload.barnIds } }).session(session);
+//       } else if (payload.areaId) {
+//         targetBarns = await BarnModel.find({ area: payload.areaId }).session(session);
+//       } else {
+//         // keep old barn
+//         targetBarns = [oldBarn];
+//       }
+
+//       // check if barns actually changed (compare ids)
+//       const oldBarnIdStr = oldBarn._id.toString();
+//       const targetBarnIdsStr = targetBarns.map(b => b._id.toString()).sort();
+//       const isSameBarnSet = (targetBarnIdsStr.length === 1 && targetBarnIdsStr[0] === oldBarnIdStr) ||
+//                             (targetBarnIdsStr.length === 0 && oldBarnIdStr);
+
+//       // Prepare new details array from payload
+//       const newDetails = Array.isArray(payload.details) ? payload.details : [];
+
+//       // Compute new date range (use payload start/end or old ones if not provided)
+//       const newStart = payload.start_date ? new Date(payload.start_date) : new Date(oldDrugUse.start_date);
+//       const newEnd = payload.end_date ? new Date(payload.end_date) : new Date(oldDrugUse.end_date);
+//       const newNumberOfDays = diffDaysInclusive(newStart, newEnd);
+//       if (newNumberOfDays <= 0) throw new Error("Khoảng thời gian không hợp lệ (end_date phải >= start_date)");
+
+//       // 7) If barn set changed (not same single barn), then per your rule: delete oldDrugUse and create new DrugUse per barn
+//       if (!isSameBarnSet) {
+//         // delete the old DrugUse doc (we already rolled back & deleted its details & logs)
+//         await DrugUseModel.deleteOne({ _id: oldDrugUse._id }).session(session);
+
+//         // For each target barn, check overlap and create new DrugUse
+//         const createdDrugUses = [];
+
+//         for (const barn of targetBarns) {
+//           //toDeductMed = [];
+//           // Overlap check: any other DrugUse (excluding the deleted one) that overlaps with newStart-newEnd
+//           const overlapping = await DrugUseModel.findOne({
+//             barn: barn._id,
+//             $or: [
+//               {
+//                 start_date: { $lte: newEnd },
+//                 end_date: { $gte: newStart }
+//               }
+//             ]
+//           }).session(session);
+
+//           if (overlapping) {
+//             throw new Error(`Chuồng ${barn.name || barn._id} đã có thiết lập thuốc khác trong khoảng thời gian này. Không cho phép chèn thêm.`);
+//           }
+
+//           // build medition_origin_inventory for this barn (unique meds)
+//         //   const medOriginArr = [];
+//         //   const usedSet = new Set();
+//         //   for (const d of newDetails) {
+//         //     if (!d.medition_warehouse) continue;
+//         //     const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
+//         //     if (!med) throw new Error(`Medition warehouse không tồn tại: ${d.medition_warehouse}`);
+//         //     const idStr = med._id.toString();
+//         //     if (!usedSet.has(idStr)) {
+//         //       medOriginArr.push({ medition_id: med._id, name: med.name, inventory: med.inventory });
+//         //       usedSet.add(idStr);
+//         //     }
+//         //   }
+
+//           // Create new DrugUse doc for this barn
+//           const [newDrugUse] = await DrugUseModel.create([{
+//             start_date: newStart,
+//             end_date: newEnd,
+//             reason: payload.reason !== undefined ? payload.reason : oldDrugUse.reason,
+//             note: payload.note !== undefined ? payload.note : oldDrugUse.note || "",
+//             barn: [barn._id]
+//           }], { session });
+
+//           // Now compute total deduction per med for this barn (based on barn.number_of_pigs)
+//           const deductMap = new Map(); // medId -> qty
+//           for (const d of newDetails) {
+//             if (!d.medition_warehouse) continue;
+//             const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
+//             if (!med) throw new Error(`Medition not found: ${d.medition_warehouse}`);
+//             const units = calculateInventoryNeeded(
+//               d.dosage,
+//               d.dosage_unit,
+//               med,
+//               Number(barn.total_pigs || 0),
+//               newNumberOfDays
+//             );
+//             toDeductMed.push({
+//               import_price: Number(med.import_price || 0),
+//               originalInventory: Number(med.original_inventory || 0),
+//               requiredUnits: Number(units)
+//             });
+//             const key = med._id.toString();
+//             deductMap.set(key, (deductMap.get(key) || 0) + units);
+//           }
+
+//           // Check inventory sufficiency for all meds
+//           for (const [medId, qty] of deductMap.entries()) {
+//             const med = await MeditionWareHouseModel.findById(medId).session(session);
+//             if (Number(med.inventory || 0) < Number(qty || 0)) {
+//               throw new Error(`Kho không đủ thuốc ${med.name} cho chuồng ${barn.name}. Cần ${qty}, tồn kho ${med.inventory}`);
+//             }
+//           }
+
+//           // Deduct inventories
+//           for (const [medId, qty] of deductMap.entries()) {
+//             const med = await MeditionWareHouseModel.findById(medId).session(session);
+//             med.inventory = Number(med.inventory || 0) - Number(qty || 0);
+//             await med.save({ session });
+//           }
+
+//           // Create DrugUseDetail docs (1 record per detail for this barn)
+//           const detailsToInsert = [];
+//           for (const d of newDetails) {
+//             const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
+//             detailsToInsert.push({
+//               time: d.time,
+//               method: d.method,
+//               reason: d.reason || (payload.reason || oldDrugUse.reason) || "",
+//               dosage: d.dosage,
+//               dosage_unit: d.dosage_unit,
+//               note: d.note,
+//               medition_warehouse: med._id,
+//               drug_use: newDrugUse._id,
+//               vaccination: d.vaccination || null
+//             });
+//           }
+//           if (detailsToInsert.length > 0) {
+//             await DrugUseDetailModel.insertMany(detailsToInsert, { session });
+//           }
+
+//           calculateAndSaveInvestmentMedCost({barns: [barn], toDeductMed})
+//           createdDrugUses.push(newDrugUse);
+//         } // end for each target barn
+
+//         finalResult = createdDrugUses;
+//       } else {
+//         // 8) Barn unchanged -> update oldDrugUse fields, rebuild medition_origin_inventory and create new details
+//         // update fields
+//         oldDrugUse.start_date = newStart;
+//         oldDrugUse.end_date = newEnd;
+//         if (payload.reason !== undefined) oldDrugUse.reason = payload.reason;
+//         if (payload.note !== undefined) oldDrugUse.note = payload.note;
+
+//         // rebuild medition_origin_inventory from current meds (before deduction)
+//         // const medOriginArr = [];
+//         // const usedSet = new Set();
+//         // for (const d of newDetails) {
+//         //   if (!d.medition_warehouse) continue;
+//         //   const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
+//         //   if (!med) throw new Error(`Medition not found: ${d.medition_warehouse}`);
+//         //   const idStr = med._id.toString();
+//         //   if (!usedSet.has(idStr)) {
+//         //     medOriginArr.push({ medition_id: med._id, name: med.name, inventory: med.inventory });
+//         //     usedSet.add(idStr);
+//         //   }
+//         // }
+//         // oldDrugUse.medition_origin_inventory = medOriginArr;
+//         // await oldDrugUse.save({ session });
+
+//         // compute deduction map for this single barn
+//         const deductMap = new Map();
+//         for (const d of newDetails) {
+//           if (!d.medition_warehouse) continue;
+//           const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
+//           const units = calculateInventoryNeeded(
+//             d.dosage,
+//             d.dosage_unit,
+//             med,
+//             Number(oldBarn.total_pigs || 0),
+//             newNumberOfDays
+//           );
+//           console.log("Số lượng của bữa mới: " + units);
+//           toDeductMed.push({
+//             import_price: Number(med.import_price || 0),
+//             originalInventory: Number(med.original_inventory || 0),
+//             requiredUnits: Number(units)
+//           });
+//           const key = med._id.toString();
+//           deductMap.set(key, (deductMap.get(key) || 0) + units);
+//         }
+
+//         // Check inventory sufficiency
+//         for (const [medId, qty] of deductMap.entries()) {
+//           const med = await MeditionWareHouseModel.findById(medId).session(session);
+//           if (Number(med.inventory || 0) < Number(qty || 0)) {
+//             throw new Error(`Kho không đủ thuốc ${med.name}. Cần ${qty}, tồn kho ${med.inventory}`);
+//           }
+//         }
+
+//         // Deduct inventories
+//         for (const [medId, qty] of deductMap.entries()) {
+//           const med = await MeditionWareHouseModel.findById(medId).session(session);
+//           med.inventory = Number(med.inventory || 0) - Number(qty || 0);
+//           console.log("Tồn kho cho bữa mới: " + med.inventory);
+//           await med.save({ session });
+//         }
+
+//         // Create new details and link to oldDrugUse
+//         const detailsToInsert = [];
+//         for (const d of newDetails) {
+//           const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
+//           detailsToInsert.push({
+//             time: d.time,
+//             method: d.method,
+//             reason: d.reason || oldDrugUse.reason || "",
+//             dosage: d.dosage,
+//             dosage_unit: d.dosage_unit,
+//             note: d.note,
+//             medition_warehouse: med._id,
+//             drug_use: oldDrugUse._id,
+//             vaccination: d.vaccination || null
+//           });
+//         }
+//         if (detailsToInsert.length > 0) {
+//           await DrugUseDetailModel.insertMany(detailsToInsert, { session });
+//         }
+
+//         calculateAndSaveInvestmentMedCost({barns: [oldBarn], toDeductMed});
+//         finalResult = oldDrugUse;
+//       } // end barn unchanged branch
+
+//     }); // end transaction
+
+//     return finalResult;
+//   } catch (err) {
+//     // transaction will be rolled back automatically when throwing inside withTransaction
+//     throw err;
+//   } finally {
+//     session.endSession();
+//   }
+// }
+
 async function editDrugUse(drugUseId, payload) {
   const session = await mongoose.startSession();
+
   try {
     let finalResult = null;
-    let toDeductMed = [];
-
     await session.withTransaction(async () => {
-      // 1) Load existing DrugUse
+
+      /* -------------------------------------------------------------
+        1) LOAD OLD DRUG USE + OLD BARN + OLD DETAILS
+      ------------------------------------------------------------- */
       const oldDrugUse = await DrugUseModel.findById(drugUseId).session(session);
       if (!oldDrugUse) throw new Error("DrugUse không tồn tại");
 
-      // 2) Get the barn associated with oldDrugUse (we expect one barn per doc)
-      const oldBarnId = (oldDrugUse.barn && oldDrugUse.barn[0]) ? oldDrugUse.barn[0] : null;
-      if (!oldBarnId) throw new Error("DrugUse hiện tại không liên kết tới chuồng nào");
+      const oldBarnId =
+        oldDrugUse.barn && oldDrugUse.barn[0] ? oldDrugUse.barn[0] : null;
+      if (!oldBarnId)
+        throw new Error("DrugUse không liên kết tới chuồng nào");
 
       const oldBarn = await BarnModel.findById(oldBarnId).session(session);
       if (!oldBarn) throw new Error("Chuồng liên quan không tồn tại");
 
-      // 3) Load old details
-      const oldDetails = await DrugUseDetailModel.find({ drug_use: oldDrugUse._id }).session(session);
+      const oldDetails = await DrugUseDetailModel.find({
+        drug_use: drugUseId,
+      }).session(session);
 
-      // 4) ROLLBACK INVENTORY based on oldDetails + logs (completed)
-      // build rollbackMap: medId -> totalUnitsToReturn
-      const rollbackMap = new Map();
-      const oldNumberOfDays = diffDaysInclusive(oldDrugUse.start_date, oldDrugUse.end_date);
-      for (const od of oldDetails) {
-        if (!od.medition_warehouse) continue;
-        // count completed logs for this detail
-        const completedCount = await DrugUseLogModel.countDocuments({
-          med_details: od._id,
-          time: od.time,
-          status: "completed"
+      const oldNumberOfDays = diffDaysInclusive(
+        oldDrugUse.start_date,
+        oldDrugUse.end_date
+      );
+
+      /* -------------------------------------------------------------
+        2) ROLLBACK INVENTORY FROM OLD DETAILS + LOGS
+      ------------------------------------------------------------- */
+
+      const rollbackInventoryMap = new Map(); // medId -> totalUnitsToReturn
+
+      for (const detail of oldDetails) {
+        if (!detail.medition_warehouse) continue;
+
+        const completedLogs = await DrugUseLogModel.countDocuments({
+          med_details: detail._id,
+          status: "Hoàn thành",
         }).session(session);
 
-        const daysToReturn = completedCount > 0 ? completedCount : oldNumberOfDays;
+        const med = await MeditionWareHouseModel.findById(
+          detail.medition_warehouse
+        ).session(session);
+        if (!med)
+          throw new Error("Không tìm thấy thuốc cho detail: " + detail._id);
 
-        // fetch med
-        const med = await MeditionWareHouseModel.findById(od.medition_warehouse).session(session);
-        if (!med) throw new Error(`Medition warehouse không tồn tại cho detail ${od._id}`);
-
-        const units = calculateInventoryNeeded(
-          od.dosage,
-          od.dosage_unit,
+        // Số ngày cần tính dựa theo completedLogs
+        const daysUsed = completedLogs;
+        const totalUnits = calculateInventoryNeeded(
+          detail.dosage,
+          detail.dosage_unit,
           med,
-          Number(oldBarn.total_pigs || 0),
-          Number(daysToReturn || 0)
+          oldBarn.total_pigs,
+          oldNumberOfDays
         );
 
-        console.log("Lượng thuốc của bữa cũ: " + units);
-        const usedUnit = units - daysToReturn;
+        const usedUnits = calculateInventoryNeeded(
+          detail.dosage,
+          detail.dosage_unit,
+          med,
+          oldBarn.total_pigs,
+          daysUsed
+        );
+
+        const unitsToReturn = totalUnits - usedUnits;
 
         const key = med._id.toString();
-        rollbackMap.set(key, (rollbackMap.get(key) || 0) + units);
-
-        if(completedCount > 0){
-          toDeductMed.push({
-            import_price: Number(med.import_price),
-            originalInventory: Number(med.original_inventory),
-            requiredUnits: usedUnit
-          })
-        } 
+        rollbackInventoryMap.set(
+          key,
+          (rollbackInventoryMap.get(key) || 0) + unitsToReturn
+        );
       }
-      calculateAndSaveInvestmentMedCost({barns: [oldBarn], toDeductMed});
 
-      // Apply rollback to med inventories
-      for (const [medId, qty] of rollbackMap.entries()) {
-        const med = await MeditionWareHouseModel.findById(medId).session(session);
-        if (!med) throw new Error(`Medition not found while rolling back: ${medId}`);
-        med.inventory = Number(med.inventory || 0) + Number(qty || 0);
-        console.log("Tồn kho cho bữa cũ: " + med.inventory);
+      // Apply rollback
+      for (const [medId, qty] of rollbackInventoryMap.entries()) {
+        const med = await MeditionWareHouseModel.findById(medId).session(
+          session
+        );
+        if (!med) continue;
+
+        med.inventory += qty;
         await med.save({ session });
       }
 
-      // 5) Delete old details and their logs (per your 2.A requirement)
-      const oldDetailIds = oldDetails.map(d => d._id);
-      if (oldDetailIds.length > 0) {
-        // delete logs referencing these details
-        // await DrugUseLogModel.deleteMany({ med_details: { $in: oldDetailIds } }).session(session);
-        // delete the details
-        await DrugUseDetailModel.deleteMany({ _id: { $in: oldDetailIds } }).session(session);
+      /* -------------------------------------------------------------
+        3) DELETE OLD DETAILS + LOGS ONLY IF WE WILL CREATE NEW ONES
+      ------------------------------------------------------------- */
+
+      const hasNewDetails =
+        Array.isArray(payload.details) && payload.details.length > 0;
+
+      if (hasNewDetails && oldDetails.length > 0) {
+        const ids = oldDetails.map((d) => d._id);
+
+        await DrugUseLogModel.deleteMany({ med_details: { $in: ids } }).session(
+          session
+        );
+
+        await DrugUseDetailModel.deleteMany({ _id: { $in: ids } }).session(
+          session
+        );
       }
 
-      // 6) Determine target barns from payload (if none provided -> keep old barn)
-      let targetBarns = null;
-      if (Array.isArray(payload.barnIds) && payload.barnIds.length > 0) {
-        targetBarns = await BarnModel.find({ _id: { $in: payload.barnIds } }).session(session);
+      /* -------------------------------------------------------------
+        4) DETERMINE TARGET BARNS
+      ------------------------------------------------------------- */
+
+      let targetBarns;
+
+      if (payload.barnIds?.length) {
+        targetBarns = await BarnModel.find({
+          _id: { $in: payload.barnIds },
+        }).session(session);
       } else if (payload.areaId) {
-        targetBarns = await BarnModel.find({ area: payload.areaId }).session(session);
+        targetBarns = await BarnModel.find({ area: payload.areaId }).session(
+          session
+        );
       } else {
-        // keep old barn
         targetBarns = [oldBarn];
       }
 
-      // check if barns actually changed (compare ids)
-      const oldBarnIdStr = oldBarn._id.toString();
-      const targetBarnIdsStr = targetBarns.map(b => b._id.toString()).sort();
-      const isSameBarnSet = (targetBarnIdsStr.length === 1 && targetBarnIdsStr[0] === oldBarnIdStr) ||
-                            (targetBarnIdsStr.length === 0 && oldBarnIdStr);
+      // Check if barn changed
+      const sameBarn =
+        targetBarns.length === 1 &&
+        targetBarns[0]._id.toString() === oldBarn._id.toString();
 
-      // Prepare new details array from payload
-      const newDetails = Array.isArray(payload.details) ? payload.details : [];
+      /* -------------------------------------------------------------
+        5) CREATE OR UPDATE DRUGUSE
+      ------------------------------------------------------------- */
 
-      // Compute new date range (use payload start/end or old ones if not provided)
-      const newStart = payload.start_date ? new Date(payload.start_date) : new Date(oldDrugUse.start_date);
-      const newEnd = payload.end_date ? new Date(payload.end_date) : new Date(oldDrugUse.end_date);
-      const newNumberOfDays = diffDaysInclusive(newStart, newEnd);
-      if (newNumberOfDays <= 0) throw new Error("Khoảng thời gian không hợp lệ (end_date phải >= start_date)");
+      const newStart = payload.start_date
+        ? new Date(payload.start_date)
+        : oldDrugUse.start_date;
+      const newEnd = payload.end_date
+        ? new Date(payload.end_date)
+        : oldDrugUse.end_date;
 
-      // 7) If barn set changed (not same single barn), then per your rule: delete oldDrugUse and create new DrugUse per barn
-      if (!isSameBarnSet) {
-        // delete the old DrugUse doc (we already rolled back & deleted its details & logs)
+      const newDays = diffDaysInclusive(newStart, newEnd);
+      if (newDays <= 0) throw new Error("Khoảng thời gian không hợp lệ");
+
+      const newDetails = payload.details || [];
+
+      /*  ---------------- IF BARN CHANGED → DELETE OLD + CREATE NEW PER BARN ---------------- */
+      if (!sameBarn) {
         await DrugUseModel.deleteOne({ _id: oldDrugUse._id }).session(session);
 
-        // For each target barn, check overlap and create new DrugUse
-        const createdDrugUses = [];
+        const outputs = [];
 
         for (const barn of targetBarns) {
-          //toDeductMed = [];
-          // Overlap check: any other DrugUse (excluding the deleted one) that overlaps with newStart-newEnd
-          const overlapping = await DrugUseModel.findOne({
+          // Kiểm tra overlap
+          const overlap = await DrugUseModel.findOne({
             barn: barn._id,
-            $or: [
-              {
-                start_date: { $lte: newEnd },
-                end_date: { $gte: newStart }
-              }
-            ]
+            start_date: { $lte: newEnd },
+            end_date: { $gte: newStart },
           }).session(session);
 
-          if (overlapping) {
-            throw new Error(`Chuồng ${barn.name || barn._id} đã có thiết lập thuốc khác trong khoảng thời gian này. Không cho phép chèn thêm.`);
-          }
-
-          // build medition_origin_inventory for this barn (unique meds)
-        //   const medOriginArr = [];
-        //   const usedSet = new Set();
-        //   for (const d of newDetails) {
-        //     if (!d.medition_warehouse) continue;
-        //     const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
-        //     if (!med) throw new Error(`Medition warehouse không tồn tại: ${d.medition_warehouse}`);
-        //     const idStr = med._id.toString();
-        //     if (!usedSet.has(idStr)) {
-        //       medOriginArr.push({ medition_id: med._id, name: med.name, inventory: med.inventory });
-        //       usedSet.add(idStr);
-        //     }
-        //   }
-
-          // Create new DrugUse doc for this barn
-          const [newDrugUse] = await DrugUseModel.create([{
-            start_date: newStart,
-            end_date: newEnd,
-            reason: payload.reason !== undefined ? payload.reason : oldDrugUse.reason,
-            note: payload.note !== undefined ? payload.note : oldDrugUse.note || "",
-            barn: [barn._id]
-          }], { session });
-
-          // Now compute total deduction per med for this barn (based on barn.number_of_pigs)
-          const deductMap = new Map(); // medId -> qty
-          for (const d of newDetails) {
-            if (!d.medition_warehouse) continue;
-            const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
-            if (!med) throw new Error(`Medition not found: ${d.medition_warehouse}`);
-            const units = calculateInventoryNeeded(
-              d.dosage,
-              d.dosage_unit,
-              med,
-              Number(barn.total_pigs || 0),
-              newNumberOfDays
+          if (overlap)
+            throw new Error(
+              `Chuồng ${barn.name} đã có chế độ dùng thuốc trong khoảng này`
             );
-            toDeductMed.push({
-              import_price: Number(med.import_price || 0),
-              originalInventory: Number(med.original_inventory || 0),
-              requiredUnits: Number(units)
-            });
+
+          // Tạo DrugUse mới
+          const [newDU] = await DrugUseModel.create(
+            [
+              {
+                start_date: newStart,
+                end_date: newEnd,
+                reason: payload.reason ?? oldDrugUse.reason,
+                note: payload.note ?? oldDrugUse.note,
+                barn: [barn._id],
+              },
+            ],
+            { session }
+          );
+
+          // Tính inventory cần trừ
+          const deductMap = new Map();
+
+          for (const item of newDetails) {
+            const med = await MeditionWareHouseModel.findById(
+              item.medition_warehouse
+            ).session(session);
+
+            const need = calculateInventoryNeeded(
+              item.dosage,
+              item.dosage_unit,
+              med,
+              barn.total_pigs,
+              newDays
+            );
+
             const key = med._id.toString();
-            deductMap.set(key, (deductMap.get(key) || 0) + units);
+            deductMap.set(key, (deductMap.get(key) || 0) + need);
           }
 
-          // Check inventory sufficiency for all meds
+          // Kiểm tra tồn kho
           for (const [medId, qty] of deductMap.entries()) {
-            const med = await MeditionWareHouseModel.findById(medId).session(session);
-            if (Number(med.inventory || 0) < Number(qty || 0)) {
-              throw new Error(`Kho không đủ thuốc ${med.name} cho chuồng ${barn.name}. Cần ${qty}, tồn kho ${med.inventory}`);
-            }
+            const med = await MeditionWareHouseModel.findById(medId).session(
+              session
+            );
+            if (med.inventory < qty)
+              throw new Error(
+                `Kho không đủ thuốc ${med.name} cho chuồng ${barn.name}`
+              );
           }
 
-          // Deduct inventories
+          // Trừ kho
           for (const [medId, qty] of deductMap.entries()) {
-            const med = await MeditionWareHouseModel.findById(medId).session(session);
-            med.inventory = Number(med.inventory || 0) - Number(qty || 0);
+            const med = await MeditionWareHouseModel.findById(medId).session(
+              session
+            );
+            med.inventory -= qty;
             await med.save({ session });
           }
 
-          // Create DrugUseDetail docs (1 record per detail for this barn)
-          const detailsToInsert = [];
-          for (const d of newDetails) {
-            const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
-            detailsToInsert.push({
-              time: d.time,
-              method: d.method,
-              reason: d.reason || (payload.reason || oldDrugUse.reason) || "",
-              dosage: d.dosage,
-              dosage_unit: d.dosage_unit,
-              note: d.note,
-              medition_warehouse: med._id,
-              drug_use: newDrugUse._id,
-              vaccination: d.vaccination || null
-            });
-          }
-          if (detailsToInsert.length > 0) {
-            await DrugUseDetailModel.insertMany(detailsToInsert, { session });
-          }
+          // Tạo detail mới
+          const detailsInsert = newDetails.map((d) => ({
+            time: d.time,
+            method: d.method,
+            dosage: d.dosage,
+            dosage_unit: d.dosage_unit,
+            note: d.note,
+            medition_warehouse: d.medition_warehouse,
+            drug_use: newDU._id,
+          }));
 
-          calculateAndSaveInvestmentMedCost({barns: [barn], toDeductMed})
-          createdDrugUses.push(newDrugUse);
-        } // end for each target barn
+          if (detailsInsert.length)
+            await DrugUseDetailModel.insertMany(detailsInsert, { session });
 
-        finalResult = createdDrugUses;
-      } else {
-        // 8) Barn unchanged -> update oldDrugUse fields, rebuild medition_origin_inventory and create new details
-        // update fields
+          outputs.push(newDU);
+        }
+
+        finalResult = outputs;
+      }
+
+      /*  ---------------- IF BARN SAME → UPDATE OLD DRUGUSE + CREATE NEW DETAILS ---------------- */
+      else {
+        // Update DrugUse
         oldDrugUse.start_date = newStart;
         oldDrugUse.end_date = newEnd;
         if (payload.reason !== undefined) oldDrugUse.reason = payload.reason;
         if (payload.note !== undefined) oldDrugUse.note = payload.note;
 
-        // rebuild medition_origin_inventory from current meds (before deduction)
-        // const medOriginArr = [];
-        // const usedSet = new Set();
-        // for (const d of newDetails) {
-        //   if (!d.medition_warehouse) continue;
-        //   const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
-        //   if (!med) throw new Error(`Medition not found: ${d.medition_warehouse}`);
-        //   const idStr = med._id.toString();
-        //   if (!usedSet.has(idStr)) {
-        //     medOriginArr.push({ medition_id: med._id, name: med.name, inventory: med.inventory });
-        //     usedSet.add(idStr);
-        //   }
-        // }
-        // oldDrugUse.medition_origin_inventory = medOriginArr;
-        // await oldDrugUse.save({ session });
+        await oldDrugUse.save({ session }); // IMPORTANT FIX
 
-        // compute deduction map for this single barn
+        // Tính inventory cần trừ
         const deductMap = new Map();
-        for (const d of newDetails) {
-          if (!d.medition_warehouse) continue;
-          const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
-          const units = calculateInventoryNeeded(
-            d.dosage,
-            d.dosage_unit,
+
+        for (const item of newDetails) {
+          const med = await MeditionWareHouseModel.findById(
+            item.medition_warehouse
+          ).session(session);
+
+          const qty = calculateInventoryNeeded(
+            item.dosage,
+            item.dosage_unit,
             med,
-            Number(oldBarn.total_pigs || 0),
-            newNumberOfDays
+            oldBarn.total_pigs,
+            newDays
           );
-          console.log("Số lượng của bữa mới: " + units);
-          toDeductMed.push({
-            import_price: Number(med.import_price || 0),
-            originalInventory: Number(med.original_inventory || 0),
-            requiredUnits: Number(units)
-          });
+
           const key = med._id.toString();
-          deductMap.set(key, (deductMap.get(key) || 0) + units);
+          deductMap.set(key, (deductMap.get(key) || 0) + qty);
         }
 
-        // Check inventory sufficiency
+        // Kiểm tra kho
         for (const [medId, qty] of deductMap.entries()) {
-          const med = await MeditionWareHouseModel.findById(medId).session(session);
-          if (Number(med.inventory || 0) < Number(qty || 0)) {
-            throw new Error(`Kho không đủ thuốc ${med.name}. Cần ${qty}, tồn kho ${med.inventory}`);
-          }
+          const med = await MeditionWareHouseModel.findById(medId).session(
+            session
+          );
+          if (med.inventory < qty)
+            throw new Error(`Kho không đủ thuốc: ${med.name}`);
         }
 
-        // Deduct inventories
+        // Trừ kho
         for (const [medId, qty] of deductMap.entries()) {
-          const med = await MeditionWareHouseModel.findById(medId).session(session);
-          med.inventory = Number(med.inventory || 0) - Number(qty || 0);
-          console.log("Tồn kho cho bữa mới: " + med.inventory);
+          const med = await MeditionWareHouseModel.findById(medId).session(
+            session
+          );
+          med.inventory -= qty;
           await med.save({ session });
         }
 
-        // Create new details and link to oldDrugUse
-        const detailsToInsert = [];
-        for (const d of newDetails) {
-          const med = await MeditionWareHouseModel.findById(d.medition_warehouse).session(session);
-          detailsToInsert.push({
-            time: d.time,
-            method: d.method,
-            reason: d.reason || oldDrugUse.reason || "",
-            dosage: d.dosage,
-            dosage_unit: d.dosage_unit,
-            note: d.note,
-            medition_warehouse: med._id,
-            drug_use: oldDrugUse._id,
-            vaccination: d.vaccination || null
-          });
-        }
-        if (detailsToInsert.length > 0) {
-          await DrugUseDetailModel.insertMany(detailsToInsert, { session });
-        }
+        // Tạo detail mới
+        const detailsInsert = newDetails.map((d) => ({
+          time: d.time,
+          method: d.method,
+          dosage: d.dosage,
+          dosage_unit: d.dosage_unit,
+          note: d.note,
+          medition_warehouse: d.medition_warehouse,
+          drug_use: oldDrugUse._id,
+        }));
 
-        calculateAndSaveInvestmentMedCost({barns: [oldBarn], toDeductMed});
+        if (detailsInsert.length)
+          await DrugUseDetailModel.insertMany(detailsInsert, { session });
+
         finalResult = oldDrugUse;
-      } // end barn unchanged branch
-
-    }); // end transaction
+      }
+    });
 
     return finalResult;
   } catch (err) {
-    // transaction will be rolled back automatically when throwing inside withTransaction
+    console.error("❌ editDrugUse ERROR:", err);
     throw err;
   } finally {
     session.endSession();
@@ -428,7 +742,7 @@ async function editDrugUse(drugUseId, payload) {
 }
 
 async function deleteDrugUse({ drugUseId = null, areaId = null } = {}) {
-  if (!drugUseId && !areaId) throw new Error("Phải cung cấp drugUseId hoặc areaId");
+  if (!drugUseId && !areaId) throw new Error("Cung cấp drugUseId hoặc areaId");
 
   // Lấy danh sách DrugUse cần xóa
   let drugUsesToDelete = [];
@@ -505,6 +819,7 @@ async function deleteDrugUse({ drugUseId = null, areaId = null } = {}) {
                 );
                 console.log(unitsCompleted);
 
+                // Phàn này nghĩa là: chỉ tính tiền những phần đã dùng rồi
                 if(completedCount > 0)
                 {
                   usedUnits = unitsCompleted - completedCount;
@@ -513,7 +828,7 @@ async function deleteDrugUse({ drugUseId = null, areaId = null } = {}) {
                     originalInventory: Number(med.original_inventory),
                     requiredUnits: usedUnits
                   })
-                }
+                } 
 
                 // units to return = total - completed
                 let unitsToReturn = Number(unitsTotal || 0) - Number(unitsCompleted || 0);
@@ -537,7 +852,7 @@ async function deleteDrugUse({ drugUseId = null, areaId = null } = {}) {
             const delDuRes = await DrugUseModel.deleteOne({ _id: du._id }).session(session);
             summary.deletedDrugUses += delDuRes.deletedCount || 0;
 
-            calculateAndSaveInvestmentMedCost({barns: [barn], toDeductMed});
+            calculateAndSaveInvestmentUpdateMedCost({barns: [barn], toDeductMed});
         } // end for each DrugUse
 
         // apply med returns

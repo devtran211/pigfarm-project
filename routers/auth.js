@@ -21,10 +21,18 @@ function createTokenAndRespond(user, res) {
   return token;
 }
 
+router.get('/register', (req, res) => {
+  res.render('signin-signup/signup', {
+    layout: false
+  });
+});
+
 router.post('/register', [
   body('name').notEmpty().withMessage('Name required'),
   body('email').isEmail().withMessage('Valid email required'),
-  body('password').isLength({ min: 8 }).withMessage('Password min 8 chars')
+  body('password')
+  .isLength({ min: 8 }).withMessage('Password must have at least 8 characters')
+  .matches(/[A-Z]/).withMessage('Password must contain at least 1 uppercase letter')
 ], async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -34,16 +42,28 @@ router.post('/register', [
 
     // Check duplicate
     const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ message: 'Email already in use' });
-
+    if (existing) {
+      return res.status(400).render('signin-signup/signup', {
+        layout: false,
+        errors: [{ msg: 'Email already in use' }],
+        old: req.body
+      });
+    }
     const user = new User({ name, email, password });
     await user.save();
 
     const token = createTokenAndRespond(user, res);
-    res.status(201).json({ message: 'User created', user: user.toJSON(), token });
+    //res.status(201).json({ message: 'User created', user: user.toJSON(), token });
+    return res.redirect('/auth/login');
   } catch (err) {
     next(err);
   }
+});
+
+router.get('/login', (req, res) => {
+  res.render('signin-signup/signin', {
+    layout: false
+  });
 });
 
 router.post('/login', [
@@ -62,7 +82,8 @@ router.post('/login', [
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
     const token = createTokenAndRespond(user, res);
-    res.json({ message: 'Logged in', user: user.toJSON(), token });
+    //res.json({ message: 'Logged in', user: user.toJSON(), token });
+    return res.redirect('/home');
   } catch (err) {
     next(err);
   }

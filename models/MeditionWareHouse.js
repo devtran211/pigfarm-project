@@ -3,10 +3,10 @@ const mongoose = require('mongoose');
 const MeditionWareHouseSchema = new mongoose.Schema({
     name: String,
     brand: String,
-    drug_type: String,
-    usage_type: {
+    medicineType: String,
+    usageType: {
       type: String,
-      enum: ['Trộn thức ăn', 'Pha nước', 'Tiêm', 'Uống trực tiếp'], 
+      enum: ['Mixing feed', 'Mixing water', 'Injection', 'Drinking directly', 'Disinfectant spray'], 
       required: true
    },
     inventory: Number,
@@ -14,8 +14,12 @@ const MeditionWareHouseSchema = new mongoose.Schema({
     unit: String,
     capacity: String,
     import_price: Number,
-    date_of_manufacture: Date,
+    dateOfManufacture: Date,
     expiry: Date,
+    importDate: {
+      type: Date,
+      default: Date.now()
+    },
     note: String,
     invoice: {
       type: mongoose.Schema.Types.ObjectId,

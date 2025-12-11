@@ -2,7 +2,7 @@ const mongoose =  require("mongoose");
 
 const FeedingLogSchema = new mongoose.Schema({
     meal: {
-        type: String, // ví dụ: "morning", "noon", "evening"
+        type: String, // exp: "morning", "noon", "evening"
         required: true,
     },
     status: {

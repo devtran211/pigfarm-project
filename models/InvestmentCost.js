@@ -4,7 +4,6 @@ const InvestmentCostSchema = new mongoose.Schema({
     breeding_cost: Number,
     food_cost: Number,
     medition_cost: Number,
-    fixed_cost: Number,
     total: Number,
     barn:{
         type: mongoose.Schema.Types.ObjectId,

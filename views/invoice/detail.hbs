@@ -1,0 +1,140 @@
+<div class="page-title">Invoice Detail - {{invoice.name}}</div>
+
+<div class="invoice-info">
+    <p><strong>Supplier:</strong> {{invoice.supplier.name}}</p>
+    <p><strong>Status:</strong> {{invoice.payment_status}}</p>
+    <p><strong>Total:</strong> {{formatMoney invoice.total}}</p>
+</div>
+
+<div class="table-wrapper">
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Discount</th>
+                <th>Total Price</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {{#each invoice.items}}
+            <tr>
+                <td>{{this.refData.name}}</td>
+                <td>{{formatMoney this.price}}</td>
+                <td>{{this.quantity}}</td>
+                <td>{{this.discount}}</td>
+                <td>{{formatMoney this.total_price}}</td>
+            </tr>
+            {{/each}}
+        </tbody>
+    </table>
+</div>
+
+
+<style>
+/* ===== PAGE TITLE ===== */
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+}
+
+
+/* ===== INVOICE INFO BOX ===== */
+.invoice-info {
+    background: #f8fbff;
+    padding: 18px 20px;
+    border: 1px solid #dce9f9;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    line-height: 1.6;
+}
+
+.invoice-info p {
+    margin: 6px 0;
+    font-size: 15px;
+}
+
+.invoice-info strong {
+    color: #2c3e50;
+}
+
+
+/* ===== TABLE WRAPPER ===== */
+.table-wrapper {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #e0e6ed;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    overflow-x: auto;   /* responsive */
+}
+
+
+/* ===== TABLE STYLE ===== */
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.custom-table thead tr {
+    background: #f1f7ff;
+    border-bottom: 2px solid #d2e8ff;
+}
+
+.custom-table th {
+    padding: 12px 10px;
+    text-align: left;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #dbe4ee;
+}
+
+.custom-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #ecf1f6;
+}
+
+/* Hover row */
+.custom-table tbody tr:hover {
+    background-color: #eef6ff;
+}
+
+
+/* ===== BADGES (optional) ===== */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+}
+
+.status-paid     { background: #2ecc71; }
+.status-partial  { background: #f1c40f; }
+.status-unpaid   { background: #e74c3c; }
+
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 20px;
+    }
+
+    .invoice-info {
+        font-size: 14px;
+    }
+
+    .custom-table th,
+    .custom-table td {
+        font-size: 14px;
+        padding: 10px 6px;
+    }
+}
+</style>

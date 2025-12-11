@@ -1,244 +1,181 @@
 const express = require('express');
 const router = express.Router();
+const AreaModel = require('../models/Area');
 const BarnModel = require('../models/Barn');
 const BarnHealthModel = require('../models/BarnHealth');
-// const req = require('express/lib/request');
+const PigModel = require('../models/Pig');
 
 router.get("/", async (req, res) => {
-  try {
-    // Lấy danh sách tất cả các chuồng, kèm tên khu
-    const barns = await BarnModel.find()
-      .populate("breedingarea", "name")
-      .lean(); // lean() giúp tăng tốc, trả về plain object
+    try {
+        const areas = await AreaModel.find().lean();
 
-    // Với mỗi chuồng, tìm bản ghi Barn_health mới nhất
-    const results = await Promise.all(
-      barns.map(async (barn) => {
-        const latestHealth = await BarnHealthModel.findOne({ barn: barn._id })
-          .sort({ dateOfInspection: -1 }) // mới nhất
-          .lean();
+        const selectedAreaId = req.query.area || (areas[0]?._id.toString() || "");
 
-        return {
-          barnId: barn._id,
-          barnName: barn.name,
-          breedingAreaName: barn.breedingarea?.name || null,
-          latestHealth: latestHealth
-            ? {
-                dateOfInspection: latestHealth.dateOfInspection,
-                averageWeight: latestHealth.averageWeight,
-                loss: latestHealth.loss,
-                faecesStatus: latestHealth.faecesStatus,
-                note: latestHealth.note,
-              }
-            : null,
-        };
-      })
-    );
+        // Lấy barns theo area
+        const barns = await BarnModel.find({
+            area: selectedAreaId
+        }).lean();
 
-    // Trả kết quả
-    res.status(200).json(results);
-  } catch (error) {
-    console.error("Error fetching barn health list:", error);
-    res.status(500).json({ message: "Error fetching barn health list" });
-  }
-});
+        // Map barns + health records
+        const barnsWithHealth = await Promise.all(
+            barns.map(async (b) => {
+                const health = await BarnHealthModel.find({ barn: b._id })
+                    .sort({ dateOfInspection: -1 })
+                    .lean();
 
-router.get("/history/:barnId", async (req, res) => {
-  try {
-    const { barnId } = req.params;
+                return {
+                    ...b,
+                    healthRecords: health
+                };
+            })
+        );
 
-    // Tìm thông tin chuồng
-    const barn = await BarnModel.findById(barnId)
-      .populate("breedingarea", "name")
-      .lean();
-    if (!barn) {
-      return res.status(404).json({ message: "Không tìm thấy chuồng" });
-    }
+        const areaData = [
+            {
+                _id: selectedAreaId,
+                name: areas.find(a => a._id.toString() === selectedAreaId)?.name || "",
+                barns: barnsWithHealth
+            }
+        ];
 
-    // Lấy danh sách bản ghi sức khỏe theo chuồng
-    const healthRecords = await BarnHealthModel.find({ barn: barnId })
-      .sort({ dateOfInspection: -1 }) // sắp xếp mới nhất lên đầu
-      .lean();
-
-    // Nếu chưa có bản ghi nào
-    if (healthRecords.length === 0) {
-      return res.status(200).json({
-        barn: {
-          barnId: barn._id,
-          barnName: barn.name,
-          breedingAreaName: barn.breedingarea?.name || null,
-        },
-        message: "Chuồng này chưa có dữ liệu sức khỏe nào",
-        healthRecords: [],
-      });
-    }
-
-    // Trả về kết quả
-    res.status(200).json({
-      barn: {
-        barnId: barn._id,
-        barnName: barn.name,
-        breedingAreaName: barn.breedingarea?.name || null,
-        currentTotalPigs: barn.total_pigs,
-      },
-      totalRecords: healthRecords.length,
-      healthRecords: healthRecords.map((r) => ({
-        id: r._id,
-        dateOfInspection: r.dateOfInspection,
-        totalPigs: r.totalPigs,
-        averageWeight: r.averageWeight,
-        loss: r.loss,
-        faecesStatus: r.faecesStatus,
-        note: r.note,
-      })),
-    });
-  } catch (error) {
-    console.error("Error fetching barn health history:", error);
-    res.status(500).json({ message: "Lỗi khi lấy lịch sử sức khỏe chuồng" });
-  }
-});
-
-router.post("/create/:barnId", async (req, res) => {
-  try {
-    const { barnId } = req.params;
-    const {
-      dateOfInspection,
-      averageWeight,
-      loss,
-      faecesStatus,
-      note,
-    } = req.body;
-
-    // Kiểm tra chuồng có tồn tại không
-    const barn = await BarnModel.findById(barnId);
-    if (!barn) {
-      return res.status(404).json({ message: "Không tìm thấy chuồng" });
-    }
-
-    // Tạo bản ghi Barn_health mới
-    const newHealthRecord = new BarnHealthModel({
-      barn: barnId,
-      dateOfInspection,
-      averageWeight,
-      loss,
-      faecesStatus,
-      note,
-    });
-
-    await newHealthRecord.save();
-
-    // Cập nhật lại total_pigs trong Barn
-    // Nếu có loss => trừ loss, nếu không => có thể cập nhật totalPigs nếu có truyền vào
-    if (typeof loss === "number" && loss > 0) {
-      barn.total_pigs = Math.max(0, barn.total_pigs - loss); // tránh âm
-    }
-
-    await barn.save();
-
-    res.status(201).json({
-      message: "Thêm dữ liệu sức khỏe chuồng thành công",
-      barnHealth: newHealthRecord,
-      updatedBarnTotalPigs: barn.total_pigs,
-    });
-  } catch (error) {
-    console.error("Error creating barn health record:", error);
-    res.status(500).json({ message: "Lỗi khi thêm dữ liệu sức khỏe chuồng" });
-  }
-});
-
-router.put("/edit/:barnHealthId", async (req, res) => {
-  try {
-    const { barnHealthId } = req.params;
-    const {
-      dateOfInspection,
-      averageWeight,
-      loss,
-      faecesStatus,
-      note,
-    } = req.body;
-
-    // Tìm bản ghi Barn_health cần chỉnh sửa
-    const healthRecord = await BarnHealthModel.findById(barnHealthId);
-    if (!healthRecord) {
-      return res.status(404).json({ message: "Không tìm thấy bản ghi sức khỏe" });
-    }
-
-    // Lấy thông tin chuồng liên quan
-    const barn = await BarnModel.findById(healthRecord.barn);
-    if (!barn) {
-      return res.status(404).json({ message: "Không tìm thấy chuồng liên quan" });
-    }
-
-    // Nếu có loss mới, tính toán chênh lệch để cập nhật total_pigs
-    if (typeof loss === "number" && loss !== healthRecord.loss) {
-      const diff = loss - (healthRecord.loss || 0); // chênh lệch giữa loss mới và cũ
-      const newTotal = barn.total_pigs - diff;
-
-      // kiểm tra nếu âm => báo lỗi, không cập nhật
-      if (newTotal < 0) {
-        return res.status(400).json({
-          message: `Số lợn sau khi trừ (${barn.total_pigs} - ${diff}) bị âm. Vui lòng kiểm tra lại dữ liệu.`,
+        res.render("barnhealth/index", {
+            areas,
+            selectedAreaId,
+            areaData
         });
-      }
 
-      barn.total_pigs = newTotal;
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Server error");
     }
-
-    // Cập nhật lại các trường khác trong bản ghi Barn_health
-    healthRecord.dateOfInspection = dateOfInspection || healthRecord.dateOfInspection;
-    healthRecord.averageWeight = averageWeight ?? healthRecord.averageWeight;
-    healthRecord.loss = loss ?? healthRecord.loss;
-    healthRecord.faecesStatus = faecesStatus ?? healthRecord.faecesStatus;
-    healthRecord.note = note ?? healthRecord.note;
-
-    await healthRecord.save();
-    await barn.save();
-
-    res.status(200).json({
-      message: "Cập nhật dữ liệu sức khỏe chuồng thành công",
-      barnHealth: healthRecord,
-      updatedBarnTotalPigs: barn.total_pigs,
-    });
-  } catch (error) {
-    console.error("Error updating barn health record:", error);
-    res.status(500).json({ message: "Lỗi khi cập nhật dữ liệu sức khỏe chuồng" });
-  }
 });
 
-router.delete("/delete/:barnHealthId", async (req,res) => {
-  try {
-    const { barnHealthId } = req.params;
+router.get("/:barnId/pigs", async (req, res) => {
+    try {
+        const barnId = req.params.barnId;
 
-    // Tìm bản ghi cần xóa
-    const healthRecord = await BarnHealthModel.findById(barnHealthId);
-    if (!healthRecord) {
-      return res.status(404).json({ message: "Không tìm thấy bản ghi sức khỏe" });
+        const barn = await BarnModel.findById(barnId).lean();
+        const pigs = await PigModel.find({ barn: barnId, isDeleted: false }).lean();
+
+        res.render("barnhealth/pig-index", {
+            barn,
+            pigs
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).send("Server error");
     }
+});
 
-    // Tìm chuồng liên quan
-    const barn = await BarnModel.findById(healthRecord.barn);
-    if (!barn) {
-      return res.status(404).json({ message: "Không tìm thấy chuồng liên quan" });
+// GET list barns for select
+router.get("/list", async (req, res) => {
+    try {
+        const barns = await BarnModel.find().lean();
+        res.json(barns);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server Error" });
     }
+});
 
-    // Nếu bản ghi có loss, hoàn lại số lợn đó
-    if (typeof healthRecord.loss === "number" && healthRecord.loss > 0) {
-      barn.total_pigs += healthRecord.loss;
+// POST create barn health record
+router.post("/create", async (req, res) => {
+    try {
+        const {
+            barn,
+            averageWeight,
+            loss,
+            faecesStatus,
+            dateOfInspection,
+            note
+        } = req.body;
+
+        if (!barn) {
+            return res.status(400).json({ error: "Missing barn id" });
+        }
+
+        const record = new BarnHealthModel({
+            barn,
+            averageWeight,
+            loss,
+            faecesStatus,
+            dateOfInspection,
+            note
+        });
+
+        await record.save();
+
+        res.json({ success: true, record });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
     }
+});
 
-    // Xóa bản ghi Barn_health
-    await healthRecord.deleteOne();
-    await barn.save();
+router.get("/:id", async (req, res) => {
+    try {
+        const record = await BarnHealthModel.findById(req.params.id).lean();
 
-    res.status(200).json({
-      message: "Xóa bản ghi sức khỏe chuồng thành công",
-      restoredLoss: healthRecord.loss || 0,
-      updatedBarnTotalPigs: barn.total_pigs,
-    });
-  } catch (error) {
-    console.error("Error deleting barn health record:", error);
-    res.status(500).json({ message: "Lỗi khi xóa bản ghi sức khỏe chuồng" });
-  }
+        if (!record)
+            return res.status(404).json({ error: "Record not found" });
+
+        res.json(record);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+router.post("/update/:id", async (req, res) => {
+    try {
+        const {
+            averageWeight,
+            loss,
+            faecesStatus,
+            dateOfInspection,
+            note
+        } = req.body;
+
+        const updated = await BarnHealthModel.findByIdAndUpdate(
+            req.params.id,
+            {
+                averageWeight,
+                loss,
+                faecesStatus,
+                dateOfInspection,
+                note
+            },
+            { new: true }
+        );
+
+        if (!updated)
+            return res.status(404).json({ error: "Record not found" });
+
+        res.json({ success: true, updated });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+router.post("/delete/:id", async (req, res) => {
+    try {
+        const deleted = await BarnHealthModel.findByIdAndDelete(req.params.id);
+
+        if (!deleted) {
+            return res.status(404).json({ error: "Record not found" });
+        }
+
+        res.json({ success: true });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
 });
 
 module.exports = router;

@@ -6,7 +6,7 @@ const HerdModel = require('../models/Herd');
 const GiveBirthdModel = require('../models/ReproductiveManagement/GiveBirthRecord');
 const WeaningModel = require('../models/ReproductiveManagement/Weaning');
 
-router.post("/add", async (req, res) => {
+router.post("/create", async (req, res) => {
   const session = await mongoose.startSession();
   try {
     session.startTransaction();
@@ -18,7 +18,6 @@ router.post("/add", async (req, res) => {
       pigletHealth,
       avgWeaningWeightKg,
       note,
-      //herd
       name,
       dateOfEntry,
       sex,
@@ -62,7 +61,7 @@ router.post("/add", async (req, res) => {
     const sowHerdType = birth.sow?.herd?.type || null;
     const boarHerdType = birth.boar?.herd?.type || null;
 
-    let herdType = "offspring";
+    let herdType = "";
     if (sowHerdType && boarHerdType) {
       herdType = `${sowHerdType} x ${boarHerdType}`;
     } else if (sowHerdType && !boarHerdType) {

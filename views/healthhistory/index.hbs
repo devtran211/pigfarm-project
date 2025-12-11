@@ -1,0 +1,121 @@
+<div class="page-title">Health history</div>
+
+<div class="warehouse-filter">
+    <div class="filter-group">
+        <label>Search pig tag</label>
+        <input type="text" id="searchPigTag" placeholder="Enter pig tag...">
+    </div>
+
+    <div class="filter-group">
+        <label>Status</label>
+        <input type="text" id="searchPigTag" placeholder="Enter pig status...">
+    </div>
+</div>
+
+<div class="farmgo-card">
+    <table class="farmgo-table">
+        <thead>
+            <tr>
+                <th>Tag</th>
+                <th>Birth Date</th>
+                <th>Sex</th>
+                <th>Status</th>
+                <th>Vaccination</th>
+                <th class="header-empty"></th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {{#if pigs.length}}
+                {{#each pigs}}
+                    <tr data-pig-id="{{this._id}}">
+                        <td>{{this.tag}}</td>
+                        <td>{{formatDate this.birthDate}}</td>
+                        <td>{{this.sex}}</td>
+                        <td>{{this.status}}</td>
+                        <td>{{#if vaccination}}Yes{{else}}No{{/if}}</td>
+                    </tr>
+                {{/each}}
+            {{else}}
+                <tr>
+                    <td colspan="6" style="text-align:center; color:#888;">
+                        No pigs in this barn
+                    </td>
+                </tr>
+            {{/if}}
+        </tbody>
+    </table>
+</div>
+
+<script src="/js/health-history.js"></script>
+
+<style>
+.farmgo-card {
+    background: #fff;
+    padding: 0;
+    border-radius: 14px;
+    box-shadow: 0px 2px 10px rgba(0,0,0,0.06);
+    margin-top: 20px;
+    overflow: hidden;
+    border: 1px solid #eef1f4;
+}
+
+.farmgo-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.farmgo-table thead tr {
+    background: #f6f9fc;
+}
+
+.farmgo-table th {
+    padding: 14px 20px;
+    font-weight: 600;
+    text-align: center;
+    color: #2f3a4a;
+    border-bottom: 1px solid #e4e8ec;
+}
+
+.farmgo-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f3f5;
+    vertical-align: middle;
+    text-align: center;
+    background: #fff;
+}
+
+.farmgo-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.warehouse-filter {
+    display: flex;
+    flex-wrap: wrap;            /* Cho phép xuống dòng */
+    gap: 20px 40px;             /* Khoảng cách giữa các filter */
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: row;       /* CHO HAI THÀNH PHẦN NẰM NGANG */
+    align-items: center;       /* Căn giữa theo trục dọc */
+    gap: 10px;                 /* Khoảng cách giữa label và select */
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin: 0;                 /* Không cần margin dưới nữa */
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+</style>

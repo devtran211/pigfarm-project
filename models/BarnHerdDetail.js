@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 
 const BarnHerdDetailSchema = new mongoose.Schema({
-   herdName: String, 
-   herdQuantity: Number,
+   herdCode: String, 
+   importQuantity: Number,
+   avgWeight: Number,
    sex: String,
-    barn: {
+   barn: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'barns' 
    },

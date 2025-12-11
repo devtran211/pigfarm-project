@@ -13,11 +13,7 @@ const DrugUseDetailSchema = new mongoose.Schema({
     drug_use: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'drug_uses'
-    },
-    vaccination: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'vaccinations'
-    },
+    }
 });
 
 var DrugUseDetailModel = mongoose.model('drug_use_details', DrugUseDetailSchema);

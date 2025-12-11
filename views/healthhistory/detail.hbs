@@ -1,0 +1,407 @@
+<div class="container">
+
+    <div class="section">
+        <h2>Health History</h2>
+
+        <span style="font-size: 14px"><strong>Pig tag:</strong> {{pig.tag}}</span><br><br>
+        <span style="font-size: 14px"><strong>Sex:</strong> {{pig.sex}}</span><br><br>
+
+        {{#each histories}}
+            <div class="data-label">
+                <div class="record-item"><strong>Discovery date:</strong> {{formatDate this.dateOfDiscovery}}</div>
+                <div class="record-item"><strong>Recovery date:</strong> {{formatDate this.dateOfRecovery}}</div>
+                <div class="record-item"><strong>Result:</strong> {{#if this.result}} Dead {{else}} Recovered {{/if}}</div>
+                <div class="record-item"><strong>Symptom:</strong> {{this.symptom}}</div>
+                <div class="record-item"><strong>Movement:</strong> {{this.movementStatus}}</div>
+                <div class="record-item"><strong>Eating behavior:</strong> {{this.eatingBehavior}}</div>
+                <div class="record-item"><strong>Water intake:</strong> {{this.waterIntake}}</div>
+                <div class="record-item"><strong>Humidity:</strong> {{this.humidity}}</div>
+                <div class="record-item"><strong>Note:</strong> {{this.note}}</div>
+            </div>
+
+            <div class="button-group">
+                <button class="action-button update" data-id="{{this._id}}">Update</button>
+                <button class="action-button delete" data-id="{{this._id}}">Delete</button>
+            </div>
+
+            <hr class="divider">
+        {{/each}}
+    </div>
+
+</div>
+
+<div id="editHealthHistoryModal" class="modal-overlay">
+    <div class="modal-content">   
+        <div class="header">
+            <h2>Edit health record</h2>
+            <button class="close-btn" aria-label="Đóng">&times;</button>
+        </div>
+
+        <form id="editHealthHistoryForm">
+            <div class="form-body">
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label> Date of discovery <span class="required">*</span></label>
+                        <input type="date" name="dateOfDiscovery">
+                    </div>
+
+                    <div class="form-group">
+                        <label> Date of recovery <span class="required">*</span></label>
+                        <input type="date" name="dateOfRecovery">
+                    </div>
+
+                    <div class="form-group">
+                        <label> Result <span class="required">*</span></label>
+                        <select name="result">
+                            <option value="">-- Select Result --</option>
+                            <option value="false">Revovered</option>
+                            <option value="true">Dead</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label> Symptom <span class="required">*</span></label>
+                        <input type="text" name="symptom" min="0">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label> Movement status</label>
+                        <input type="text" name="movementStatus">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label> Eating behavior</label>
+                        <input type="text" name="eatingBehavior">
+                    </div>
+
+                    <div class="form-group">
+                        <label> Water in take </label>
+                        <input type="text" name="waterIntake">
+                    </div>
+
+                    <div class="form-group">
+                        <label> Fever status </label>
+                        <input type="text" name="feverStatus">
+                    </div>
+
+                    <div class="form-group">
+                        <label> Humidity </label>
+                        <input type="text" name="humidity">
+                    </div>
+
+                    <div class="form-group">
+                        <label> Vaccination history </label>
+                        <input type="text" name="vaccinationHistory" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Note</label>
+                    <textarea name="note"></textarea>
+                </div>
+
+            </div>
+
+            <div class="footer">
+                <button type="submit" class="save-btn">
+                    <i class="fas fa-save"></i> Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/js/health-history.js"></script>
+
+<style>
+/* CSS sẽ được đặt ở đây */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f7f6;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    background-color: white;
+    padding: 30px 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+h1 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 30px;
+    font-weight: normal;
+}
+
+h2 {
+    font-size: 18px;
+    color: #555;
+    margin-top: 25px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+/* Định dạng các dòng thông tin */
+.record-item {
+    margin-bottom: 10px;
+    color: #333;
+    font-size: 14px;
+}
+
+.record-item strong {
+    display: inline-block;
+    width: 150px; /* Độ rộng cố định cho nhãn để căn chỉnh */
+    font-weight: normal;
+}
+
+.divider {
+    border: 0;
+    border-top: 1px solid #ddd;
+    margin: 20px 0;
+}
+
+/* Định dạng các nút */
+.button-group {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.action-button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: capitalize;
+}
+
+.update {
+    background-color: #28a745; /* Green */
+}
+
+.delete {
+    background-color: #dc3545; /* Red */
+}
+
+/* Điều chỉnh cho phù hợp với hình ảnh (các dòng chỉ là nhãn) */
+.data-label {
+    line-height: 1.8;
+}
+/* CSS Create new */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+    display: none; /* 🔥 FIX: ẨN MẶC ĐỊNH */
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+}
+
+/* Header */
+.header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #aaa;
+}
+
+/* Body */
+.form-body {
+    padding: 20px;
+}
+
+/* Grid layout */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.form-group label {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.form-group label .required {
+    color: #e3342f;
+}
+
+.form-group input, 
+.form-group select,
+.form-group .custom-select-control {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Full width field */
+.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Custom input with icon */
+.input-with-icon {
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon input,
+.input-with-icon select {
+    flex-grow: 1;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+}
+
+.input-with-icon button {
+    background-color: #f8fafc;
+    border: 1px solid #ddd;
+    border-left: none;
+    padding: 10px 12px;
+    cursor: pointer;
+    color: #38c172;
+    font-size: 16px;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Tag select */
+.harvest-select-control {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px 10px;
+    background-color: white;
+}
+
+.harvest-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #cfebe6;
+    color: #2c7a7b;
+    padding: 4px 8px;
+    margin-right: 5px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.harvest-tag span {
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.harvest-arrow {
+    margin-left: auto;
+    color: #888;
+}
+
+/* Textarea */
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Footer */
+.footer {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.save-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #79c9b1;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.save-btn i {
+    margin-right: 8px;
+}
+
+.warehouse-filter {
+    display: flex;
+    flex-wrap: wrap;            /* Cho phép xuống dòng */
+    gap: 20px 40px;             /* Khoảng cách giữa các filter */
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+</style>

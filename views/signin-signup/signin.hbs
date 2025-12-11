@@ -1,0 +1,329 @@
+<div class="bg-shape-top-left"></div>
+<div class="bg-shape-bottom-right"></div>
+
+<div class="container">
+    <div class="left-section">
+
+        <p class="welcome-text">Welcome</p>
+        <h2 class="login-header">Log In</h2>
+
+        <form action="/auth/login" method="POST">
+
+            <div class="form-group">
+                <label for="email">Your Email</label>
+                <div class="input-wrapper">
+                    <input type="email" id="email" name="email" placeholder="Your email">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Your password">
+                    <span class="input-suffix">&#128065;</span>
+                </div>
+            </div>
+            
+            <div class="forgot-password">
+                <a href="#">Forgot password?</a>
+            </div>
+
+            <button class="login-button" type="submit">Log In</button>
+        </form>
+
+        <p class="signup-text">Don't have an account? <a href="/auth/register">Sign Up</a></p>
+    </div>
+
+    <div class="right-section">
+        <div class="right-section-inner">
+
+            <div class="logo">
+                Logo<br> <span>( Logo )</span>
+            </div>
+
+            <div class="illustration-image"></div>
+
+            <h2 class="main-slogan"></h2>
+            <p class="sub-slogan">This is a place where you can manage and sell your farm product.</p>
+        </div>
+    </div>
+</div>
+
+
+<style>
+/* Base Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f2f5; /* Light grey background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; /* Full viewport height */
+    color: #333;
+    overflow: hidden; /* Prevent scrollbar if shapes go out */
+}
+
+
+.container {
+    display: flex;
+    width: 100%;
+    max-width: 950px; /* Adjust max width */
+    background-color: white;
+    border-radius: 12px;
+    overflow: hidden; /* Ensures image corners are rounded */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    min-height: 550px; /* Minimum height for the form */
+    z-index: 1; /* Bring container to front */
+}
+
+/* Left Section - Log In Form */
+.left-section {
+    flex: 1.2; /* Slightly larger than right to fit content */
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start; /* Align content to the left */
+    position: relative;
+}
+
+.app-store-links {
+    position: absolute;
+    top: 30px;
+    left: 40px;
+    display: flex;
+    gap: 10px;
+}
+
+.app-store-links img {
+    height: 30px; /* Adjust as needed */
+    cursor: pointer;
+}
+
+.welcome-text {
+    font-size: 14px;
+    color: #777;
+    margin-bottom: 5px;
+}
+
+.login-header {
+    font-size: 32px;
+    font-weight: bold;
+    color: #222;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 350px; /* Limit input width */
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: 12px 15px;
+    padding-right: 45px; /* Space for icon/suffix */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+.input-wrapper input:focus {
+    border-color: #5cb85c; /* Green focus */
+    outline: none;
+}
+
+.input-suffix {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+    font-size: 16px;
+}
+
+.forgot-password {
+    text-align: right;
+    margin-top: -10px; /* Adjust spacing with previous input */
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 350px;
+}
+
+.forgot-password a {
+    color: #5cb85c; /* Green link */
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.login-button {
+    width: 100%;
+    max-width: 350px;
+    padding: 14px 20px;
+    background-color: #5cb85c; /* Green button */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.3s;
+}
+
+.login-button:hover {
+    background-color: #4cae4c;
+}
+
+.signup-text {
+    font-size: 13px;
+    color: #777;
+    margin-top: 25px;
+    text-align: center;
+    width: 100%;
+    max-width: 350px;
+}
+
+.signup-text a {
+    color: #5cb85c;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* Right Section - Illustration */
+.right-section {
+    flex: 1; 
+    background-color: #5cb85c; /* Darker green background */
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    color: white;
+    border-top-left-radius: 70px; /* Curved top-left corner as in image */
+    border-bottom-left-radius: 70px; /* Curved bottom-left corner as in image */
+    margin-left: -50px; /* Overlap to create the curved shape */
+    padding-left: 80px; /* Adjust padding due to overlap */
+}
+
+.right-section-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    max-width: 350px; /* Limit content width */
+}
+
+.right-section .logo {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    text-align: right;
+}
+
+.right-section .logo span {
+    display: block;
+    font-size: 12px;
+    font-weight: normal;
+    opacity: 0.8;
+}
+
+.illustration-image {
+    width: 100%;
+    max-width: 350px; /* Adjust size of illustration */
+    height: auto;
+    margin-bottom: 30px;
+    /* Placeholder image */
+    background-image: url('https://via.placeholder.com/350x200/5cb85c/ffffff?text=Farmers+Illustration');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    min-height: 200px;
+}
+
+.main-slogan {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    line-height: 1.2;
+}
+
+.sub-slogan {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Responsive adjustments */
+@media (max-width: 850px) {
+    .container {
+        flex-direction: column;
+        min-height: auto;
+        max-width: 500px;
+    }
+    .left-section {
+        order: 2; /* Put form below illustration */
+        padding: 30px;
+        align-items: center;
+    }
+    .right-section {
+        order: 1; /* Put illustration above form */
+        padding: 60px 30px;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 70px; /* Curved bottom-right for illustration */
+        border-top-right-radius: 70px; /* Curved top-right for illustration */
+        margin-left: 0;
+        padding-left: 30px;
+    }
+    .app-store-links {
+        position: static;
+        margin-bottom: 30px;
+    }
+    .right-section .logo {
+        position: static;
+        margin-bottom: 30px;
+    }
+    .illustration-image {
+        min-height: 150px;
+        margin-bottom: 20px;
+    }
+    .main-slogan {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 500px) {
+    .container {
+        margin: 20px;
+    }
+    .left-section, .right-section {
+        padding: 30px 20px;
+    }
+    .app-store-links {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
